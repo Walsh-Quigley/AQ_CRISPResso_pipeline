@@ -1,0 +1,4 @@
+[wsl2]
+memory=4GB           # Limits WSL2 VM memory to 4 gigabytes
+processors=2         # Limits WSL2 VM to 2 CPU cores
+swap=0               # Disables swap 
