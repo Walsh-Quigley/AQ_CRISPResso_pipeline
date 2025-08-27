@@ -98,9 +98,9 @@ BEQ CRISPResso Pipline can be used in two steps.
 
 ### Step 1 ###
 
-First by placing the CRISPResso_Loop.py file in your fastq data directory and then entering 
+First by placing the [CRISPResso_Loop.py](https://raw.githubusercontent.com/Walsh-Quigley/BaseEditingQuantificationsOfCRISPRESSOOutputs/refs/heads/main/CRISPResso_Loop.py)  file in your fastq data directory and then entering 
 ``` 
-python3 CRISPResso_loop.py 
+python3 CRISPResso_loop.py
 ```
 while in that directory. User will be asked if they'd like to create a Common_amplicon_list file. If needed, the user will have an opportunity to input an amplicon and its relevant information.
 
@@ -173,3 +173,7 @@ The names of its contributors may not be used to endorse or promote products der
 ## FAQ ##
 
 ## Changelog ##
+
+## Scripts ##
+
+[CRISPResso_Loop.py](https://raw.githubusercontent.com/Walsh-Quigley/BaseEditingQuantificationsOfCRISPRESSOOutputs/refs/heads/main/CRISPResso_Loop.py)
