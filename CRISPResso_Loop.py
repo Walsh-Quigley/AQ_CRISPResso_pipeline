@@ -1,136 +1,57 @@
-#location of .py file: /Users/aidanq/Desktop/Bash_Scripts/BaseEditingQuantificationsOfCRISPRESSOOutputs/CRISPResso_Loop.py
-
-
 import os
-import subprocess
-import glob
-import re
+from scripts.banner import print_banner
+from scripts.gather_amplicon_names import gather_amplicon_names
+from scripts.identify_amplicon import identify_amplicon
+from scripts.CRISPResso_inputs import CRISPResso_inputs
+from scripts.run_CRISPResso import run_CRISPResso
 
 
 
-# the function to retrieve the GuideSequence AmpliconSequence and GuideOrientation
-def retrieveCRISPRessoInputs(search_term):
-    guideSequence = ""
-    ampliconSequence = ""
-    guideOrientation = ""
+def main():
+    print_banner()
 
-    with open('./../Common_amplicon_list.csv', 'r') as file:
-        for line in file:
-            #Split the line by commas and clean up each column
-            columns = line.strip().split(',')
-            if columns[0].upper() == search_term:
-                guideSequence = columns[1].upper().replace("\r", "").replace("-", "")[:20]
-                ampliconSequence = columns[4].upper().replace("\r", "").strip()
-                guideOrientation = columns[3].upper().replace("\r", "").strip()
-                break
+    #Get a list of all the names in the amplicon_list
+    amplicon_names = gather_amplicon_names("amplicon_list.csv")
+    print("Amplicon names:", amplicon_names)
 
-    # Print the retrieved variables
-    print(f"Guide Sequence Variable: {guideSequence}")
-    print(f"Amplicon Sequence Variable: {ampliconSequence}")
-    print(f"Guide Orientation: {guideOrientation}")
 
-    return guideSequence, ampliconSequence, guideOrientation
-
-def run_CRISPResso(ampliconSequence, guideSequence, fastq_files):
-
-    if len(fastq_files) == 2:
-        subprocess.run([
-            'CRISPResso',
-            '--fastq_r1', fastq_files[0],
-            '--fastq_r2', fastq_files[1],
-            '--amplicon_seq', ampliconSequence,
-            '--guide_seq', guideSequence,
-            '--exclude_bp_from_left', '0',
-            '--exclude_bp_from_right', '0',
-            '--quantification_window_size', '10',
-            '--quantification_window_center', '-10',
-            '--base_editor_output'
-        ])
-    elif len(fastq_files) == 1:
-        subprocess.run([
-            'CRISPResso',
-            '--fastq_r1', fastq_files[0],
-            '--amplicon_seq', ampliconSequence,
-            '--guide_seq', guideSequence,
-            '--quantification_window_size', '10',
-            '--quantification_window_center', '-10',
-            '--quantification_window_size', '10',
-            '--quantification_window_center', '-10',
-            '--base_editor_output'
-        ])
-    else:
-        print("No fastq files found for this directory")
-
-#find the fastq file names and see if it is single or paired end reads
-def gather_fastqs():
-        fastq_files = glob.glob('*R1_001.fastq*') + glob.glob('*R2_001.fastq*')
-        return fastq_files
-
-def directoryDelimiter():
-
-    # List directories in the current directory
-    current_directory = os.getcwd()  # Get the current working cddirectory
-    directories = [d for d in os.listdir(current_directory) if os.path.isdir(os.path.join(current_directory, d))]
-    
-    # Display the first 3 directories
-    print("First 3 directories in the current directory:")
-    for i, directory in enumerate(directories[:3], start=1):
-        print(f"{i}. {directory}")
-
-    while True:
-        # Prompt user for delimiters
-        delimiter_input = input(
-            "Enter the delimiter(s) used in the directories for your data (e.g., '-', '_'). "
-            "For multiple delimiters, enter them without spaces (e.g., '-_'): "
-        ).strip()
-        
-        if not delimiter_input:
-            print("Delimiter cannot be empty. Please try again.")
-            continue
-
-        # Convert input into a regex pattern to match any of the provided delimiters
-        delimiter_pattern = f"[{re.escape(delimiter_input)}]"
-
-        column_input = input("Enter the position in the file name (starting from 1) where the search term is located:").strip()
-
-        if not column_input.isdigit() or int(column_input) < 1:
-            print("Invalid column index. Please enter a positive integer.")
-            continue
-
-        column_index = int(column_input) - 1
-        return delimiter_pattern, column_index
-
-delimiter, column_index = directoryDelimiter()
-
-#Main Loop
-for directory in os.listdir():
-    if os.path.isdir(directory):
+    for directory in os.listdir():
         print("-----------")
+        if directory in ["scripts", "unprocessed_data"]:
+            print(f"Skipping: {directory}")
 
-        os.chdir(directory)
-        print(f"The Directory is: {directory}")
+        elif os.path.isdir(directory):
+            print(f"Processing directory: {directory}")
+            directory_path = os.path.join(os.getcwd(), directory)
 
-        #gather fastq files
-        fastq_files = gather_fastqs()
-        print(f"Our fastq file(s) are: {fastq_files}")
+            # Identify the amplicon name from the directory name
+            matched_name = identify_amplicon(directory.upper(), amplicon_names)
 
-        parts = re.split(delimiter, directory)
-        if len(parts) < 3:
-            directoryErrorMessage = f"Unexpected directory name format: {directory}"
-            print(directoryErrorMessage) #print the error
-            continue #move on to the next directory
+            # Get inputs for CRISPResso call from amplicon list
+            guide_seq, amplicon_seq, orientation, editor, intended_edit, tolerated_edits = CRISPResso_inputs(matched_name)
+            print(f"guide_seq: {guide_seq}, amplicon_seq: {amplicon_seq}, orientation: {orientation}, editor: {editor}")
+
+            # Handle PE cases
+            if editor == "PE":
+                print("Still need to build out PE case")
+                continue
+            
+            # Handle CBE cases
+            if editor == "CBE":
+                print("Still need to build out CBE case")
+                continue
+
+            # Handle ABE cases
+            if editor == "ABE":
+                run_CRISPResso(guide_seq, amplicon_seq, orientation, editor, directory_path)
+
+            
+        else:
+            print(f"Skipping non-directory item: {directory}")
+        
 
 
-        #getting the search term from the directory name using the dash delimiter
-        directoryName = os.path.basename(directory)
-        searchTerm = parts[column_index].upper()
-        print(f"The Search Term is: {searchTerm}")
 
 
-        #getting the CRISPResso variables using the search term
-        guideSequence, ampliconSequence, guideOrientation = retrieveCRISPRessoInputs(searchTerm)
-
-        #run CRISPResso
-        run_CRISPResso(ampliconSequence, guideSequence, fastq_files)
-
-        os.chdir('..')
+if __name__ == "__main__":
+    main()
