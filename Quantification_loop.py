@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import re
 from scripts.banner import print_banner
 from scripts.gather_amplicon_names import gather_amplicon_names
 from scripts.identify_amplicon import identify_amplicon
@@ -61,6 +62,7 @@ def main():
                 correction_with_bystander, correction_without_bystanders = filter_alleles_file(search_strings, directory_path)
                 print(f"correction_with_bystander: {correction_with_bystander}, correction_without_bystanders: {correction_without_bystanders}")
                 directory_name = os.path.basename(directory_path.rstrip('/'))
+                sample_name = re.sub(r'-ds\..*', '', directory_name)
                 independent_correction = identify_independent_correction(orientation, intended_edit, directory_path)
                 if  correction_with_bystander == "NA" or correction_without_bystanders == "NA":
                     print(f"Skipping directory {directory_name} due to missing data.")
@@ -68,7 +70,7 @@ def main():
                 if independent_correction == "NA":
                     reads_aligned, reads_total = read_extraction(directory_path)
                     w_bystanders_less_wo_bystanders = correction_with_bystander - correction_without_bystanders
-                    results.append({"directory":directory_name,
+                    results.append({"directory":sample_name,
                                     "reads_aligned": reads_aligned,
                                     "reads_total": reads_total,
                                     "correction_with_bystanders":correction_with_bystander,
@@ -93,7 +95,7 @@ def main():
                     w_bystanders_less_wo_bystanders = "error"
 
                 reads_aligned, reads_total = read_extraction(directory_path)
-                results.append({"directory":directory_name,
+                results.append({"directory":sample_name,
                                 "reads_aligned": reads_aligned,
                                 "reads_total": reads_total,
                                 "correction_with_bystanders":correction_with_bystander,

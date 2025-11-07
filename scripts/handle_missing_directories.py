@@ -1,5 +1,6 @@
 # scripts/handle_missing_directories.py
 
+import re
 import os
 import pandas as pd
 
@@ -27,11 +28,16 @@ def add_unanalyzed_directories(df: pd.DataFrame, skip_dirs=None, note="Directory
     # Get all directories in the current folder, excluding skip_dirs
     all_dirs = [d for d in os.listdir() if os.path.isdir(d) and d not in skip_dirs]
 
+    cleaned_all_dirs = [re.sub(r'-ds\..*', '', d) for d in all_dirs]
+
     # Directories already in the DataFrame
     analyzed_dirs = df["directory"].tolist()
 
     # Find missing directories
-    missing_dirs = [d for d in all_dirs if d not in analyzed_dirs]
+    missing_dirs = [
+        d for d, cleaned in zip(all_dirs, cleaned_all_dirs)
+        if cleaned not in analyzed_dirs
+    ]
 
     # Create placeholder rows
     placeholder_rows = []

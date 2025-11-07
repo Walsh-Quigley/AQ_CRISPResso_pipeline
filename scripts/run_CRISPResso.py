@@ -3,7 +3,7 @@ import glob
 import subprocess
 
 def run_CRISPResso(guide_seq, amplicon_seq, orientation, editor, directory_path):
-
+    print(f"Running CRISPResso for editor: {editor} in directory: {directory_path}")
     # Look for fastq or fastq.gz files in the directory
     fastq_files = glob.glob(os.path.join(directory_path, "*.fastq")) + \
                   glob.glob(os.path.join(directory_path, "*.fastq.gz"))
@@ -13,32 +13,29 @@ def run_CRISPResso(guide_seq, amplicon_seq, orientation, editor, directory_path)
         return
     
     elif len(fastq_files) == 1:
-        fastq_file = fastq_files[0]
+            fastq_cmd_section = ['--fastq_r1', fastq_files[0]]
+    elif len(fastq_files) == 2:
+            fastq_cmd_section = ['--fastq_r1', fastq_files[0], '--fastq_r2', fastq_files[1]]
+    else:
+        print(f"More than two FASTQ files found in {directory_path}. Please check the files. Skipping...")
+        return
+    
+    cmd = [
+        'CRISPResso',
+        *fastq_cmd_section,
+        '--amplicon_seq', amplicon_seq,
+        '--guide_seq', guide_seq,
+        '--output_folder', directory_path,
+        '--plot_window_size', '10',
+        '--quantification_window_center', '-10',
+        '--quantification_window_size', '10',
+    ]
 
-        # First attempt with quantification window
-        cmd = [
-            'CRISPResso',
-            '--fastq_r1', fastq_file,
-            '--amplicon_seq', amplicon_seq,
-            '--guide_seq', guide_seq,
-            '--quantification_window_size', '10',
-            '--quantification_window_center', '-10',
-            '--base_editor_output',
-            '--output_folder', directory_path
-        ]
+    result = subprocess.run(cmd, check=False)
+    if result.returncode != 0:
+        print("\n\033[1;31mCRISPResso failed\033[0m")
+        print(f"Error: {result.stderr}")
 
-        print(f"Running CRISPResso on {fastq_file} with quantification window...")
-        result = subprocess.run(cmd)
 
-        # Retry without window if it fails
-        if result.returncode != 0:
-            print("\nCRISPResso failed with quantification window. Retrying without window...")
-            retry_cmd = [
-                'CRISPResso',
-                '--fastq_r1', fastq_file,
-                '--amplicon_seq', amplicon_seq,
-                '--guide_seq', guide_seq,
-                '--base_editor_output',
-                '--output_folder', directory_path
-            ]
-            subprocess.run(retry_cmd)
+
+
