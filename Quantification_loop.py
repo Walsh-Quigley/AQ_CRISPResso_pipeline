@@ -5,7 +5,7 @@ from scripts.banner import print_banner
 from scripts.gather_amplicon_names import gather_amplicon_names
 from scripts.identify_amplicon import identify_amplicon
 from scripts.CRISPResso_inputs import CRISPResso_inputs
-from scripts.generate_search_sequences import generate_search_sequences
+from scripts.generate_search_sequences import generate_search_sequences, generate_all_A_to_G_sequences
 from scripts.filter_alleles_file import filter_alleles_file
 from scripts.identify_independent_correction import identify_independent_correction
 from scripts.handle_missing_directories import add_unanalyzed_directories
@@ -14,7 +14,9 @@ from scripts.generate_prism_csv import generate_prism_csv
 
 
 
+
 results = []
+one_seq_results = []
 def main():
     print_banner()
 
@@ -43,6 +45,26 @@ def main():
             # Get inputs for CRISPResso call from amplicon list
             guide_seq, amplicon_seq, orientation, editor, intended_edit, tolerated_edits  = CRISPResso_inputs(matched_name)
 
+            if intended_edit == "ONESEQ":
+                print("Intended edit is ONESEQ; special handling may be required.")
+                search_strings = generate_all_A_to_G_sequences(guide_seq, orientation)
+                print(f"The search strings generated for ONESEQ are: {search_strings}")
+                correction_with_bystander, correction_without_bystanders = filter_alleles_file(search_strings, directory_path)
+                directory_name = os.path.basename(directory_path.rstrip('/'))
+                sample_name = re.sub(r'-ds\..*', '', directory_name)
+                reads_aligned, reads_total = read_extraction(directory_path)
+
+                print(f"correction_with_bystander: {correction_with_bystander}, correction_without_bystanders: {correction_without_bystanders}")
+
+                one_seq_results.append({"directory":sample_name,
+                                "reads_aligned": reads_aligned,
+                                "reads_total": reads_total,
+                                "Percent_reads_with_edit_in_edit_window":correction_with_bystander,
+                                "guide_seq": guide_seq,
+                                "search_sequences": ";".join(search_strings)
+                                })
+                continue
+
             print(f"guide_seq: {guide_seq}, amplicon_seq: {amplicon_seq}, orientation: {orientation}, editor: {editor}, intended_edit: {intended_edit}, tolerated_edits: {tolerated_edits}")
 
 
@@ -60,10 +82,11 @@ def main():
             if editor == "ABE":
                 search_strings = generate_search_sequences(guide_seq, orientation, editor, intended_edit, tolerated_edits, directory_path)
                 correction_with_bystander, correction_without_bystanders = filter_alleles_file(search_strings, directory_path)
+                independent_correction = identify_independent_correction(orientation, intended_edit, directory_path)
                 print(f"correction_with_bystander: {correction_with_bystander}, correction_without_bystanders: {correction_without_bystanders}")
                 directory_name = os.path.basename(directory_path.rstrip('/'))
                 sample_name = re.sub(r'-ds\..*', '', directory_name)
-                independent_correction = identify_independent_correction(orientation, intended_edit, directory_path)
+                
                 if  correction_with_bystander == "NA" or correction_without_bystanders == "NA":
                     print(f"Skipping directory {directory_name} due to missing data.")
                     continue
@@ -110,6 +133,23 @@ def main():
             
         else:
             print(f"Skipping non-directory item: {directory}")
+
+
+    
+
+    if one_seq_results:
+        one_seq_csv_file = os.path.join(os.getcwd(), "quantification_loop_ONE-seq.csv")   
+        df_one_seq = pd.DataFrame(one_seq_results, columns=["directory",
+                                "reads_aligned",
+                                "reads_total",
+                                "Percent_reads_with_edit_in_edit_window",
+                                "guide_seq",
+                                "search_sequences"
+                                ])
+        df_one_seq.to_csv(one_seq_csv_file, index=False)
+        print(f"Saved ONESEQ summary to {one_seq_csv_file}")
+    else:
+        print("No ONESEQ results to save.")
 
     df = pd.DataFrame(results, columns=["directory",
                                         "reads_aligned",

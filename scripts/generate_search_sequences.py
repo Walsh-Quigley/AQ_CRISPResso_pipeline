@@ -40,6 +40,8 @@ def generate_tolerated_sequences(edit, point_correction, corrected_sequence, gui
 
 
 def generate_search_sequences(guide_seq, orientation, editor, intended_edit, tolerated_edits, directory_path):
+
+
     # print(f"Running read_based_quant with guide_seq: {guide_seq}, orientation: {orientation}, editor: {editor}, intended_edit: {intended_edit}, tolerated_edits: {tolerated_edits}, directory_path: {directory_path}")
 
     if orientation not in ["F", "R"]:
@@ -82,3 +84,44 @@ def generate_search_sequences(guide_seq, orientation, editor, intended_edit, tol
     print(f"Search sequences generated: {search_strings}")
 
     return search_strings
+
+def generate_all_A_to_G_sequences(guide_seq, orientation):
+
+    all_sequences = []
+    base_to_correct = "A"
+    guide_seq = guide_seq.upper()
+    correction = "G"
+
+    if orientation == "R":
+        guide_seq = reverse_complement(guide_seq)
+        base_to_correct = "T"
+        correction = "C"
+
+    # Find positions of the base to correct
+    edit_positions = [i for i, base in enumerate(guide_seq) if base == base_to_correct]
+
+
+    # Restrict to first/last 10 positions
+    if orientation == "F":
+        subset_seq = guide_seq[:10]
+        offset = 0  # positions relative to full guide
+    elif orientation == "R":
+        subset_seq = guide_seq[-10:]
+        offset = len(guide_seq) - 10
+    else:
+        subset_seq = guide_seq
+        offset = 0
+
+    edit_positions = [i + offset for i, base in enumerate(subset_seq) if base == base_to_correct]
+
+    # Generate all combinations of A-to-G edits
+    for r in range(1, len(edit_positions) + 1):
+        for combo in itertools.combinations(edit_positions, r):
+            seq_list = list(guide_seq)
+            for pos in combo:
+                seq_list[pos] = correction
+            all_sequences.append("".join(seq_list))
+
+
+
+    return all_sequences
