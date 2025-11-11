@@ -7,3 +7,9 @@ __pycache__/
 
 # Optional: other temporary files
 *.log
+
+#fastq files
+fastqs/
+
+#Log files
+logs/

@@ -1,6 +1,21 @@
 # scripts/identify_amplicon.py
+import logging
 
 def identify_amplicon(directory, amplicon_names):
+    """
+    Identify which amplicon a directory corresponds to based on its name.
+    
+    Args:
+        directory: Directory name to match
+        amplicon_names: List of valid amplicon names
+        
+    Returns:
+        str: Matched amplicon name
+        
+    Raises:
+        ValueError: If no matching amplicon is found
+    """
+
     matched_name = None
     directory_upper = directory.upper()
 
@@ -11,6 +26,8 @@ def identify_amplicon(directory, amplicon_names):
             break
 
     if not matched_name:
-        print(f"No valid match found in amplicon list; {directory}")
- 
+        error_msg = f"No valid amplicon match found for directory: {directory}"
+        logging.error(error_msg)
+        raise ValueError(error_msg)
+    
     return matched_name
