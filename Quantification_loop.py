@@ -1,192 +1,170 @@
 import os
 import pandas as pd
 import re
+import logging
 from scripts.banner import print_banner
 from scripts.gather_amplicon_names import gather_amplicon_names
 from scripts.identify_amplicon import identify_amplicon
 from scripts.CRISPResso_inputs import CRISPResso_inputs
-from scripts.generate_search_sequences import generate_search_sequences, generate_all_A_to_G_sequences
-from scripts.filter_alleles_file import filter_alleles_file
-from scripts.identify_independent_correction import identify_independent_correction
 from scripts.handle_missing_directories import add_unanalyzed_directories
-from scripts.read_extraction import read_extraction 
 from scripts.generate_prism_csv import generate_prism_csv
+from scripts.logging_setup import setup_logging
+from scripts.process_oneseq import process_oneseq
+from scripts.process_ABE_case import process_ABE_case
+from scripts.yes_no import yes_no
 
 
 
 
-results = []
-one_seq_results = []
 def main():
+
+    results = []
+    one_seq_results = []
+    
+    #set up logging
+    log_file = setup_logging()
+
     print_banner()
 
     #Get a list of all the names in the amplicon_list
     amplicon_names = gather_amplicon_names("amplicon_list.csv")
-    print("Amplicon names:", amplicon_names)
+    logging.info(f"Amplicon names: {amplicon_names}")
+
+    # Move into the /fastqs directory
+    fastqs_dir = os.path.join(os.getcwd(), "fastqs")
+    os.chdir(fastqs_dir)
+
+    # Track processing statistics
+    processed_count = 0
+    skipped_count = 0
+    error_count = 0
+
 
 
     for directory in os.listdir():
-        print("-----------")
+        logging.info("-----------")
         if directory in ["scripts", "unprocessed_data", "unadultered_fastqs"]:
-            print(f"Skipping: {directory}")
+            logging.info(f"Skipping: {directory}")
+            skipped_count += 1
 
         elif os.path.isdir(directory):
-            print(f"Processing directory: {directory}")
+            logging.info(f"Processing directory: {directory}")
             directory_path = os.path.join(os.getcwd(), directory)
 
-            # Identify the amplicon name from the directory name
-            matched_name = identify_amplicon(directory.upper(), amplicon_names)
+            try:
+                # Identify the amplicon name from the directory name
+                matched_name = identify_amplicon(directory.upper(), amplicon_names)
 
-                        # Skip if no valid match found
-            if not matched_name:
-                print(f"No valid match found in amplicon list; skipping directory: {directory}")
-                continue
+                # Get inputs for CRISPResso call from amplicon list
+                guide_seq, amplicon_seq, orientation, editor, intended_edit, tolerated_edits  = CRISPResso_inputs(matched_name)
 
-            # Get inputs for CRISPResso call from amplicon list
-            guide_seq, amplicon_seq, orientation, editor, intended_edit, tolerated_edits  = CRISPResso_inputs(matched_name)
+                if intended_edit == "ONESEQ":
+                    result = process_oneseq(directory_path, guide_seq, orientation)
+                    one_seq_results.append(result)
+                    processed_count += 1
+                    continue
 
-            if intended_edit == "ONESEQ":
-                print("Intended edit is ONESEQ; special handling may be required.")
-                search_strings = generate_all_A_to_G_sequences(guide_seq, orientation)
-                print(f"The search strings generated for ONESEQ are: {search_strings}")
-                correction_with_bystander, correction_without_bystanders = filter_alleles_file(search_strings, directory_path)
-                directory_name = os.path.basename(directory_path.rstrip('/'))
-                sample_name = re.sub(r'-ds\..*', '', directory_name)
-                reads_aligned, reads_total = read_extraction(directory_path)
-
-                print(f"correction_with_bystander: {correction_with_bystander}, correction_without_bystanders: {correction_without_bystanders}")
-
-                one_seq_results.append({"directory":sample_name,
-                                "reads_aligned": reads_aligned,
-                                "reads_total": reads_total,
-                                "Percent_reads_with_edit_in_edit_window":correction_with_bystander,
-                                "guide_seq": guide_seq,
-                                "search_sequences": ";".join(search_strings)
-                                })
-                continue
-
-            print(f"guide_seq: {guide_seq}, amplicon_seq: {amplicon_seq}, orientation: {orientation}, editor: {editor}, intended_edit: {intended_edit}, tolerated_edits: {tolerated_edits}")
-
-
-            # Handle PE cases
-            if editor == "PE":
-                print("Still need to build out PE case")
-                continue
-            
-            # Handle CBE cases
-            if editor == "CBE":
-                print("Still need to build out CBE case")
-                continue
-
-            # Handle ABE cases
-            if editor == "ABE":
-                search_strings = generate_search_sequences(guide_seq, orientation, editor, intended_edit, tolerated_edits, directory_path)
-                correction_with_bystander, correction_without_bystanders = filter_alleles_file(search_strings, directory_path)
-                independent_correction = identify_independent_correction(orientation, intended_edit, directory_path)
-                print(f"correction_with_bystander: {correction_with_bystander}, correction_without_bystanders: {correction_without_bystanders}")
-                directory_name = os.path.basename(directory_path.rstrip('/'))
-                sample_name = re.sub(r'-ds\..*', '', directory_name)
+                # Handle PE cases
+                if editor == "PE":
+                    logging.warning("Still need to build out PE case")
+                    skipped_count += 1
+                    continue
                 
-                if  correction_with_bystander == "NA" or correction_without_bystanders == "NA":
-                    print(f"Skipping directory {directory_name} due to missing data.")
-                    continue
-                if independent_correction == "NA":
-                    reads_aligned, reads_total = read_extraction(directory_path)
-                    w_bystanders_less_wo_bystanders = correction_with_bystander - correction_without_bystanders
-                    results.append({"directory":sample_name,
-                                    "reads_aligned": reads_aligned,
-                                    "reads_total": reads_total,
-                                    "correction_with_bystanders":correction_with_bystander,
-                                    "correction_without_bystanders":correction_without_bystanders,
-                                    "independent_correction": "NA",
-                                    "indep_less_w_bystanders": "NA",
-                                    "w_bystanders_less_wo_bystanders": w_bystanders_less_wo_bystanders,
-                                    "target_locus":guide_seq,
-                                    "perfect_correction":search_strings[0],
-                                    "corrected_locus_with_bystanders": ";".join(search_strings)
-                                    })
+                # Handle CBE cases
+                if editor == "CBE":
+                    logging.warning("Still need to build out CBE case")
+                    skipped_count += 1
                     continue
 
-                indep_less_w_bystanders = independent_correction - correction_with_bystander
-                w_bystanders_less_wo_bystanders = correction_with_bystander - correction_without_bystanders
-                print(f"indep_less_w_bystanders: {indep_less_w_bystanders}, w_bystanders_less_wo_bystanders: {w_bystanders_less_wo_bystanders}")
-                if indep_less_w_bystanders < 0:
-                    print("Warning: Unexpected values detected in correction rates (independent). Please check the input data and calculations.")
-                    indep_less_w_bystanders = "error"
-                if w_bystanders_less_wo_bystanders < 0:
-                    print("Warning: Unexpected values detected in correction rates (Read-based). Please check the input data and calculations.")
-                    w_bystanders_less_wo_bystanders = "error"
+                # Handle ABE cases
+                if editor == "ABE":
+                    result = process_ABE_case(directory_path, guide_seq, orientation, editor, intended_edit, tolerated_edits)
+                    results.append(result)
+                    processed_count += 1
+                    continue
 
-                reads_aligned, reads_total = read_extraction(directory_path)
-                results.append({"directory":sample_name,
-                                "reads_aligned": reads_aligned,
-                                "reads_total": reads_total,
-                                "correction_with_bystanders":correction_with_bystander,
-                                "correction_without_bystanders":correction_without_bystanders,
-                                "independent_correction": independent_correction,
-                                "indep_less_w_bystanders": indep_less_w_bystanders,
-                                "w_bystanders_less_wo_bystanders": w_bystanders_less_wo_bystanders,
-                                "target_locus":guide_seq,
-                                "perfect_correction":search_strings[0],
-                                "corrected_locus_with_bystanders": ";".join(search_strings)
-                                 })
-            
+
+            except ValueError as e:
+                logging.error(f"Skipping: {directory}: {e}")
+                error_count += 1
+                continue
+
         else:
-            print(f"Skipping non-directory item: {directory}")
+            logging.warning(f"Skipping non-directory item: {directory}")
 
-
-    
-
+    #Saving the ONE-seq results if any
     if one_seq_results:
         one_seq_csv_file = os.path.join(os.getcwd(), "quantification_loop_ONE-seq.csv")   
-        df_one_seq = pd.DataFrame(one_seq_results, columns=["directory",
-                                "reads_aligned",
-                                "reads_total",
-                                "Percent_reads_with_edit_in_edit_window",
-                                "guide_seq",
-                                "search_sequences"
-                                ])
+        df_one_seq = pd.DataFrame(one_seq_results, columns=[
+            "sample",
+            "reads_aligned",
+            "reads_total",
+            "Percent_reads_with_edit_in_edit_window",
+            "guide_seq",
+            "search_sequences"
+            ])
         df_one_seq.to_csv(one_seq_csv_file, index=False)
-        print(f"Saved ONESEQ summary to {one_seq_csv_file}")
+        logging.info(f"Saved ONE-seq summary to {one_seq_csv_file}")
     else:
-        print("No ONESEQ results to save.")
+        logging.info("No ONE-seq results to save.")
 
-    df = pd.DataFrame(results, columns=["directory",
-                                        "reads_aligned",
-                                        "reads_total",
-                                        "correction_with_bystanders",
-                                        "correction_without_bystanders",
-                                        "independent_correction",
-                                        "indep_less_w_bystanders",
-                                        "w_bystanders_less_wo_bystanders",
-                                        "target_locus",
-                                        "perfect_correction",
-                                        "corrected_locus_with_bystanders"])
-    
-    df = add_unanalyzed_directories(df, skip_dirs=["scripts", "unprocessed_data"], note="Directory not analyzed")
+    #Saving non ONE-seq results if any
+    if results:
+        df = pd.DataFrame(results, columns=["sample",
+                                            "reads_aligned",
+                                            "reads_total",
+                                            "correction_with_bystanders",
+                                            "correction_without_bystanders",
+                                            "independent_correction",
+                                            "indep_less_w_bystanders",
+                                            "w_bystanders_less_wo_bystanders",
+                                            "target_locus",
+                                            "perfect_correction",
+                                            "corrected_locus_with_bystanders"])
+        
+        #adding unanalyzed directories to the main results dataframe
+        df = add_unanalyzed_directories(
+            df, 
+            skip_dirs=["scripts", "unprocessed_data"], 
+            convert_to_sample_name=True,
+            note="Directory not analyzed"
+        )
 
-    # sort by directory (alphabetical by default)
-    df = df.sort_values(by="directory")
+        if one_seq_results:
+            oneseq_directories = [result['sample'] for result in one_seq_results]
+            df.loc[df['sample'].isin(oneseq_directories), 'note'] = "Analyzed in quantification_loop_ONE-seq.csv"
 
-    while True:
-        prism_choice = input(f"Would you like to generate a csv output formatted for prism? (y/n)").strip().lower()
-        if prism_choice in ("y", "yes"):
-            prism_csv_file = os.path.join(os.getcwd(), "prism_formatted_output.csv")    
+        # sort by directory (alphabetical by default)
+        df = df.sort_values(by="sample")
+
+        # Prompt user to generate Prism formatted CSV
+        if yes_no("Would you like to generate a csv output formatted for prism?"):
+            logging.info("="*50)
+            logging.info("Performing Prism csv generation")
+            prism_csv_file = os.path.join(os.getcwd(), "prism_formatted_output.csv")   
             prism_df = generate_prism_csv(df)
             prism_df.to_csv(prism_csv_file, index=False)
-            print(f"Prism formatted csv saved to: {prism_csv_file}")
-            break
-        elif prism_choice in ("n", "no"):
-            print("Skipping Prism CSV generation")
-            break
+            logging.info(f"Prism formatted csv saved to: {prism_csv_file}")
         else:
-            print("Invalid, input. please type y or n")
-    
-    # save to CSV in the current working directory
-    out_file = os.path.join(os.getcwd(), "quantification_summary.csv")
-    df.to_csv(out_file, index=False)
+            logging.info("Skipping Prism CSV generation")
 
-    print(f"Saved results to {out_file}")
+        
+        # save to CSV in the current working directory
+        out_file = os.path.join(os.getcwd(), "quantification_summary.csv")
+        df.to_csv(out_file, index=False)
+
+        logging.info(f"Saved results to {out_file}")
+
+    # At the very end of main(), before the function closes:
+    logging.info("="*50)
+    logging.info("PIPELINE SUMMARY")
+    logging.info(f"Directories processed: {processed_count}")
+    logging.info(f"Directories skipped: {skipped_count}")
+    logging.info(f"Errors encountered: {error_count}")
+    logging.info(f"ONE-seq results: {len(one_seq_results)}")
+    logging.info(f"Standard results: {len(results)}")
+    logging.info(f"Log file: {log_file}")
+    logging.info("="*50)
 
 
 

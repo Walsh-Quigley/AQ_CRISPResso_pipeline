@@ -85,7 +85,7 @@ def generate_search_sequences(guide_seq, orientation, editor, intended_edit, tol
 
     return search_strings
 
-def generate_all_A_to_G_sequences(guide_seq, orientation):
+def first_10bp_A_to_G_sequences(guide_seq, orientation):
 
     all_sequences = []
     base_to_correct = "A"

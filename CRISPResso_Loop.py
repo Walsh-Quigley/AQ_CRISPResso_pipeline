@@ -76,8 +76,8 @@ def main():
                     processed_count += 1
                     logging.info(f"Successfully processed {directory}")
 
-            except Exception as e:
-                logging.error(f"Error processing {directory}: {str(e)}", exc_info=True)
+            except ValueError as e:
+                logging.error(f"Amplicon identification failed for {directory}: {str(e)}")
                 error_count += 1
                 continue
             except Exception as e:
