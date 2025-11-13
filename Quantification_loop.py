@@ -3,7 +3,7 @@ import pandas as pd
 import re
 import logging
 from scripts.banner import print_banner
-from scripts.gather_amplicon_names import gather_amplicon_names
+from scripts.verify_amplicon_list import verify_amplicon_list
 from scripts.identify_amplicon import identify_amplicon
 from scripts.CRISPResso_inputs import CRISPResso_inputs
 from scripts.handle_missing_directories import add_unanalyzed_directories
@@ -27,7 +27,7 @@ def main():
     print_banner()
 
     #Get a list of all the names in the amplicon_list
-    amplicon_names = gather_amplicon_names("amplicon_list.csv")
+    amplicon_names = verify_amplicon_list("amplicon_list.csv")
     logging.info(f"Amplicon names: {amplicon_names}")
 
     # Move into the /fastqs directory
@@ -94,19 +94,22 @@ def main():
 
     #Saving the ONE-seq results if any
     if one_seq_results:
-        one_seq_csv_file = os.path.join(os.getcwd(), "quantification_loop_ONE-seq.csv")   
+        one_seq_csv_file = os.path.join(os.getcwd(), "quantification_summary_ONE-seq.csv")   
         df_one_seq = pd.DataFrame(one_seq_results, columns=[
             "sample",
             "reads_aligned",
             "reads_total",
-            "Percent_reads_with_edit_in_edit_window",
+            "Percent_of_reads_with_A>G_in_first_10bp",
+            "Percent_of_reads_with_A>G_in_protospacer",
             "guide_seq",
-            "search_sequences"
+            "A>G_10bp_search_sequences",
+            "A>G_any_search_sequences"
             ])
         df_one_seq.to_csv(one_seq_csv_file, index=False)
         logging.info(f"Saved ONE-seq summary to {one_seq_csv_file}")
     else:
         logging.info("No ONE-seq results to save.")
+
 
     #Saving non ONE-seq results if any
     if results:

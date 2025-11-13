@@ -20,15 +20,16 @@ def run_CRISPResso(guide_seq, amplicon_seq, orientation, editor, directory_path)
         print(f"More than two FASTQ files found in {directory_path}. Please check the files. Skipping...")
         return
     
+    
     cmd = [
         'CRISPResso',
         *fastq_cmd_section,
         '--amplicon_seq', amplicon_seq,
         '--guide_seq', guide_seq,
         '--output_folder', directory_path,
-        '--plot_window_size', '10',
-        '--quantification_window_center', '-10',
-        '--quantification_window_size', '10',
+        '--plot_window_size', str((len(guide_seq)+1)//2),
+        '--quantification_window_center', str(-(len(guide_seq) +1)//2),
+        '--quantification_window_size', str((len(guide_seq)+1)//2),
     ]
 
     result = subprocess.run(cmd, check=False)

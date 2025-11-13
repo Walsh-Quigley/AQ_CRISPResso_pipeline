@@ -1,8 +1,9 @@
 import os
 import logging
+import sys
 from scripts.logging_setup import setup_logging
 from scripts.banner import print_banner
-from scripts.gather_amplicon_names import gather_amplicon_names
+from scripts.verify_amplicon_list import verify_amplicon_list
 from scripts.identify_amplicon import identify_amplicon
 from scripts.CRISPResso_inputs import CRISPResso_inputs
 from scripts.run_CRISPResso import run_CRISPResso
@@ -17,8 +18,15 @@ def main():
     print_banner()
 
     #Get a list of all the names in the amplicon_list
-    amplicon_names = gather_amplicon_names("amplicon_list.csv")
-    logging.info(f"Amplicon names: {amplicon_names}")
+    try:
+        amplicon_names = verify_amplicon_list("amplicon_list.csv")
+        logging.info(f"Amplicon names: {amplicon_names}")
+    except ValueError as e:
+        logging.error(f"Amplicon list verification failed: {e}")
+        sys.exit(1)
+    except FileNotFoundError:
+        logging.error("amplicon_list.csv not found")
+        sys.exit(1)
 
     # Move into the /fastqs directory
     fastqs_dir = os.path.join(os.getcwd(), "fastqs")

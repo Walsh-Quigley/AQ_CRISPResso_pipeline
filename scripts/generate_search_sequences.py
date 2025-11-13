@@ -37,12 +37,7 @@ def generate_tolerated_sequences(edit, point_correction, corrected_sequence, gui
 
     return tolerated_sequences
 
-
-
 def generate_search_sequences(guide_seq, orientation, editor, intended_edit, tolerated_edits, directory_path):
-
-
-    # print(f"Running read_based_quant with guide_seq: {guide_seq}, orientation: {orientation}, editor: {editor}, intended_edit: {intended_edit}, tolerated_edits: {tolerated_edits}, directory_path: {directory_path}")
 
     if orientation not in ["F", "R"]:
         print("\033[4mERROR:\033[0m Orientation must be 'F' for forward or 'R' for reverse.")
@@ -85,9 +80,10 @@ def generate_search_sequences(guide_seq, orientation, editor, intended_edit, tol
 
     return search_strings
 
-def first_10bp_A_to_G_sequences(guide_seq, orientation):
+def A_to_G_sequences(guide_seq, orientation):
 
-    all_sequences = []
+    search_strings_first_10bp = []
+    search_strings_anyA = []
     base_to_correct = "A"
     guide_seq = guide_seq.upper()
     correction = "G"
@@ -98,7 +94,7 @@ def first_10bp_A_to_G_sequences(guide_seq, orientation):
         correction = "C"
 
     # Find positions of the base to correct
-    edit_positions = [i for i, base in enumerate(guide_seq) if base == base_to_correct]
+    all_edit_positions = [i for i, base in enumerate(guide_seq) if base == base_to_correct]
 
 
     # Restrict to first/last 10 positions
@@ -112,16 +108,23 @@ def first_10bp_A_to_G_sequences(guide_seq, orientation):
         subset_seq = guide_seq
         offset = 0
 
-    edit_positions = [i + offset for i, base in enumerate(subset_seq) if base == base_to_correct]
+    first_10_edit_positions = [i + offset for i, base in enumerate(subset_seq) if base == base_to_correct]
 
-    # Generate all combinations of A-to-G edits
-    for r in range(1, len(edit_positions) + 1):
-        for combo in itertools.combinations(edit_positions, r):
+    # Generate all combinations of A-to-G edits in fist 10bp
+    for r in range(1, len(first_10_edit_positions) + 1):
+        for combo in itertools.combinations(first_10_edit_positions, r):
             seq_list = list(guide_seq)
             for pos in combo:
                 seq_list[pos] = correction
-            all_sequences.append("".join(seq_list))
+            search_strings_first_10bp.append("".join(seq_list))
+    
+    # Generate all combinations of edits for ANY A position
+    for r in range(1, len(all_edit_positions) + 1):
+        for combo in itertools.combinations(all_edit_positions, r):
+            seq_list = list(guide_seq)
+            for pos in combo:
+                seq_list[pos] = correction
+            search_strings_anyA.append("".join(seq_list))
 
+    return search_strings_first_10bp, search_strings_anyA 
 
-
-    return all_sequences

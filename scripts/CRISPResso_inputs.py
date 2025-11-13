@@ -37,6 +37,7 @@ def CRISPResso_inputs(matched_name):
             for row in reader:
                 if row["name"].strip().upper() == matched_name.strip().upper():
                     guide_seq = row["protospacer_or_PEG"].upper().strip()
+ 
                     amplicon_seq = row["amplicon"].upper().strip()
                     orientation = row["guide_orientation_relative_to_amplicon"].upper().strip()
                     editor = row["editor"].upper().strip()
