@@ -1,6 +1,7 @@
 import os
 import glob
 import subprocess
+import logging
 
 def run_CRISPResso(guide_seq, amplicon_seq, orientation, editor, directory_path):
     print(f"Running CRISPResso for editor: {editor} in directory: {directory_path}")
@@ -28,9 +29,11 @@ def run_CRISPResso(guide_seq, amplicon_seq, orientation, editor, directory_path)
         '--guide_seq', guide_seq,
         '--output_folder', directory_path,
         '--plot_window_size', str((len(guide_seq)+1)//2),
-        '--quantification_window_center', str(-(len(guide_seq) +1)//2),
+        '--quantification_window_center', str(-len(guide_seq) //2),
         '--quantification_window_size', str((len(guide_seq)+1)//2),
     ]
+
+    logging.info(cmd)
 
     result = subprocess.run(cmd, check=False)
     if result.returncode != 0:

@@ -11,21 +11,24 @@ def generate_prism_csv(df):
         raise ValueError("DataFrame must contain a 'sample' column.")
     
     # Separate out samples with notes (ONE-seq or unanalyzed)
-    noted_samples = df[df['note'].notna()].copy()
-    
-    # Only process samples without notes for Prism analysis
-    df_to_process = df[df['note'].isna()].copy()
+    if "note" in df.columns:
+        noted_samples = df[df['note'].notna()].copy()
+        # Only process samples without notes for Prism analysis
+        df_to_process = df[df['note'].isna()].copy()
+    else:
+        noted_samples = pd.DataFrame()  # Empty dataframe
+        df_to_process = df.copy()
 
     if df_to_process.empty:
         logging.warning("No samples available for Prism analysis after filtering")
         return pd.DataFrame(columns=["base_sample", "status"])
     
     # Extract replicate number
-    df_to_process["rep"] = df_to_process["sample"].str.extract(r'_(\d+)$')
+    df_to_process["rep"] = df_to_process["sample"].str.extract(r'[-_](\d+)$')
     df_to_process["rep"] = df_to_process["rep"].fillna("1")
 
     # Extract base sample name (remove the trailing _#)
-    df_to_process["base_sample"] = df_to_process["sample"].str.replace(r'_(\d+)$', '', regex=True)
+    df_to_process["base_sample"] = df_to_process["sample"].str.replace(r'[-_](\d+)$', '', regex=True)
 
     # Debug logging
     logging.info("Sample name extraction:")

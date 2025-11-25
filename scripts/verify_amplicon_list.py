@@ -64,34 +64,34 @@ def verify_amplicon_list(file):
                 logging.warning(f"  Sequence: {guide['sequence']}")
                 logging.warning("")
 
-        #check if the user wants to do anything about the guides that are nonstandard length
-        while True:
-            response = input("Would you like to truncate these guides to 20bp? (y/n) (probably not if these are for ONE-seq): ").strip().lower()
+        # #check if the user wants to do anything about the guides that are nonstandard length
+        # while True:
+        #     response = input("Would you like to truncate these guides to 20bp? (y/n) (probably not if these are for ONE-seq): ").strip().lower()
             
-            if response == 'y':
-                # Save original file as backup
-                backup_file = file.replace('.csv', '_untruncated.csv')
-                shutil.copy2(file, backup_file)
-                logging.info(f"Original file backed up to: {backup_file}")
+        #     if response == 'y':
+        #         # Save original file as backup
+        #         backup_file = file.replace('.csv', '_untruncated.csv')
+        #         shutil.copy2(file, backup_file)
+        #         logging.info(f"Original file backed up to: {backup_file}")
                 
-                # Truncate the protospacer sequences and overwrite the file
-                for row in all_rows:
-                    protospacer = row['protospacer_or_PEG'].strip()
-                    if len(protospacer) > 20:
-                        row['protospacer_or_PEG'] = protospacer[:20]
+        #         # Truncate the protospacer sequences and overwrite the file
+        #         for row in all_rows:
+        #             protospacer = row['protospacer_or_PEG'].strip()
+        #             if len(protospacer) > 20:
+        #                 row['protospacer_or_PEG'] = protospacer[:20]
                 
-                # Write back to the file
-                with open(file, 'w', newline='', encoding='utf-8-sig') as f:
-                    writer = csv.DictWriter(f, fieldnames=required_headers)
-                    writer.writeheader()
-                    writer.writerows(all_rows)
+        #         # Write back to the file
+        #         with open(file, 'w', newline='', encoding='utf-8-sig') as f:
+        #             writer = csv.DictWriter(f, fieldnames=required_headers)
+        #             writer.writeheader()
+        #             writer.writerows(all_rows)
                 
-                logging.info("Truncated non-standard guides to 20bp and updated amplicon_list.csv")
-                break
-            elif response == 'n':
-                logging.info("User declined truncation. Continuing with non-standard guide lengths.")
-                break
-            else:
-                print("Invalid input. Please enter 'y' or 'n'.")
+        #         logging.info("Truncated non-standard guides to 20bp and updated amplicon_list.csv")
+        #         break
+        #     elif response == 'n':
+        #         logging.info("User declined truncation. Continuing with non-standard guide lengths.")
+        #         break
+        #     else:
+        #         print("Invalid input. Please enter 'y' or 'n'.")
     
     return amplicon_names
