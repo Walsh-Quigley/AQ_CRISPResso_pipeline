@@ -1,4 +1,7 @@
- #location of .py file: /Users/aidanq/Desktop/Bash_Scripts/BaseEditingQuantificationsOfCRISPRESSOOutputs/Read_based_quant.py
+#!/usr/bin/env python3
+
+#updated so no longer need to path to the file, just navigate to the correct folder and enter the command "Read_based_quant"
+#location of .py file: /Users/aidanq/Desktop/Bash_Scripts/BaseEditingQuantificationsOfCRISPRESSOOutputs/Read_based_quant.py
 
 import os
 import re
@@ -107,7 +110,7 @@ def generateSearchSequences(guideSequence, guideOrientation, correctionLocationI
         correctedSequence = (guideSequence[:correctionLocationIndex] + 'C' + 
                         guideSequence[correctionLocationIndex + 1:])
     else:
-        print("Invalid guide orientation")
+        print("\033[4mERROR:\033[0m Invalid guide orientation")
     
     print(f"the corrected guide sequence with intended edit: {correctedSequence}")
 

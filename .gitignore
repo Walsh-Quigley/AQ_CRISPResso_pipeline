@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Optional: other temporary files
+*.log
+
+#fastq files
+fastqs/
+
+#Log files
+logs/

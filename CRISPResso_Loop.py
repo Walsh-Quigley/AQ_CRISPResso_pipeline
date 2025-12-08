@@ -1,208 +1,111 @@
-#location of .py file: /Users/aidanq/Desktop/Bash_Scripts/BaseEditingQuantificationsOfCRISPRESSOOutputs/CRISPResso_Loop.py
-
-
 import os
-import subprocess
-import glob
-import re
-import csv
+import logging
+import sys
+from scripts.logging_setup import setup_logging
+from scripts.banner import print_banner
+from scripts.verify_amplicon_list import verify_amplicon_list
+from scripts.identify_amplicon import identify_amplicon
+from scripts.CRISPResso_inputs import CRISPResso_inputs
+from scripts.run_CRISPResso import run_CRISPResso
 
 
 
-# the function to retrieve the GuideSequence AmpliconSequence and GuideOrientation
-def retrieveCRISPRessoInputs(search_term):
-    guideSequence = ""
-    ampliconSequence = ""
-    guideOrientation = ""
+def main():
+    # Set up logging
+    log_file = setup_logging()
 
-    with open('./../Common_amplicon_list.csv', 'r') as file:
-        for line in file:
-            #Split the line by commas and clean up each column
-            columns = line.strip().split(',')
-            if columns[0].upper() == search_term:
-                guideSequence = columns[1].upper().replace("\r", "").replace("-", "")[:20]
-                ampliconSequence = columns[4].upper().replace("\r", "").strip()
-                guideOrientation = columns[3].upper().replace("\r", "").strip()
-                break
+    #print the super cool banner
+    print_banner()
 
-    # Print the retrieved variables
-    print(f"Guide Sequence Variable: {guideSequence}")
-    print(f"Amplicon Sequence Variable: {ampliconSequence}")
-    print(f"Guide Orientation: {guideOrientation}")
+    #Get a list of all the names in the amplicon_list
+    try:
+        amplicon_names = verify_amplicon_list("amplicon_list.csv")
+        logging.info(f"Amplicon names: {amplicon_names}")
+    except ValueError as e:
+        logging.error(f"Amplicon list verification failed: {e}")
+        sys.exit(1)
+    except FileNotFoundError:
+        logging.error("amplicon_list.csv not found")
+        sys.exit(1)
 
-    return guideSequence, ampliconSequence, guideOrientation
+    # Move into the /fastqs directory
+    fastqs_dir = os.path.join(os.getcwd(), "fastqs")
+    os.chdir(fastqs_dir)
+    logging.info(f"Changed to directory: {fastqs_dir}")
 
-def run_CRISPResso(ampliconSequence, guideSequence, fastq_files):
+    # Track processing statistics
+    processed_count = 0
+    skipped_count = 0
+    error_count = 0
 
-    if len(fastq_files) == 2:
-        subprocess.run([
-            'CRISPResso',
-            '--fastq_r1', fastq_files[0],
-            '--fastq_r2', fastq_files[1],
-            '--amplicon_seq', ampliconSequence,
-            '--guide_seq', guideSequence,
-            '--exclude_bp_from_left', '0',
-            '--exclude_bp_from_right', '0',
-            '--quantification_window_size', '10',
-            '--quantification_window_center', '-10',
-            '--base_editor_output'
-        ])
-    elif len(fastq_files) == 1:
-        subprocess.run([
-            'CRISPResso',
-            '--fastq_r1', fastq_files[0],
-            '--amplicon_seq', ampliconSequence,
-            '--guide_seq', guideSequence,
-            '--quantification_window_size', '10',
-            '--quantification_window_center', '-10',
-            '--quantification_window_size', '10',
-            '--quantification_window_center', '-10',
-            '--base_editor_output'
-        ])
-    else:
-        print("No fastq files found for this directory")
 
-#find the fastq file names and see if it is single or paired end reads
-def gather_fastqs():
-        fastq_files = glob.glob('*R1_001.fastq*') + glob.glob('*R2_001.fastq*')
-        return fastq_files
+    for directory in os.listdir():
+        logging.info("-----------")
 
-def directoryDelimiter():
+        if directory in ["scripts", "unprocessed_data"]:
+            logging.info(f"Skipping: {directory}")
+            skipped_count += 1
 
-    # List directories in the current directory
-    current_directory = os.getcwd()  # Get the current working cddirectory
-    directories = [d for d in os.listdir(current_directory) if os.path.isdir(os.path.join(current_directory, d))]
+        elif os.path.isdir(directory):
+            logging.info(f"Processing directory: {directory}")
+            directory_path = os.path.join(os.getcwd(), directory)
+            
+            try:
+                # Identify the amplicon name from the directory name
+                matched_name = identify_amplicon(directory.upper(), amplicon_names)
+
+                # Get inputs for CRISPResso call from amplicon list
+                guide_seq, amplicon_seq, orientation, editor, intended_edit, tolerated_edits = CRISPResso_inputs(matched_name)
+                
+                if not guide_seq or not amplicon_seq or not orientation or not editor:
+                    logging.error(f"Missing required inputs for {directory}. Skipping this directory.")
+                    error_count += 1
+                    continue
+
+                logging.info(f"guide_seq: {guide_seq}, amplicon_seq: {amplicon_seq}, orientation: {orientation}, editor: {editor}")
+
+                
+                # Handle PE cases
+                if editor == "PE":
+                    logging.warning("PE editor case not yet implemented")
+                    skipped_count += 1
+                    continue
+                
+                # Handle CBE cases
+                if editor == "CBE":
+                    logging.warning("CBE editor case not yet implemented")
+                    skipped_count += 1
+                    continue
+
+                # Handle ABE cases
+                if editor == "ABE":
+                    logging.info(f"Running CRISPResso for ABE editor on {directory}")
+                    run_CRISPResso(guide_seq, amplicon_seq, orientation, editor, directory_path)
+                    processed_count += 1
+                    logging.info(f"Successfully processed {directory}")
+
+            except ValueError as e:
+                logging.error(f"Amplicon identification failed for {directory}: {str(e)}")
+                error_count += 1
+                continue
+            except Exception as e:
+                logging.error(f"Unexpected error processing {directory}: {str(e)}", exc_info=True)
+                error_count += 1
+                continue
+        else:
+            logging.info(f"Skipping non-directory item: {directory}")
+            skipped_count += 1
     
-    # Display the first 3 directories
-    print("First 3 directories in the current directory:")
-    for i, directory in enumerate(directories[:3], start=1):
-        print(f"{i}. {directory}")
-
-    while True:
-        # Prompt user for delimiters
-        delimiter_input = input(
-            "Enter the delimiter(s) used in the directories for your data (e.g., '-', '_'). "
-            "For multiple delimiters, enter them without spaces (e.g., '-_'): "
-        ).strip()
-        
-        if not delimiter_input:
-            print("Delimiter cannot be empty. Please try again.")
-            continue
-
-        # Convert input into a regex pattern to match any of the provided delimiters
-        delimiter_pattern = f"[{re.escape(delimiter_input)}]"
-
-        column_input = input("Enter the position in the file name (starting from 1) where the search term is located:").strip()
-
-        if not column_input.isdigit() or int(column_input) < 1:
-            print("Invalid column index. Please enter a positive integer.")
-            continue
-
-        column_index = int(column_input) - 1
-        return delimiter_pattern, column_index
-
-def create_common_amplicon_file():
-    filename = "Common_amplicon_list.csv"
-    fieldnames = [
-        "name", "Protospacer_sequence", "Editor",
-        "Guide Orientation relative to amplicon", "Amplicon", "note",
-        "Tolerated Sequences", "Tolerated positions", "Intended Edits"
-    ]
-
-    start = input("Do you want to create/add to the file 'Common_amplicon_list.csv'? (yes/no): ").strip().lower()
-    if start != 'yes':
-        print("Alright, if any information is missing you will have an opportunity to correct it later.")
-        return
-
-    file_exists = os.path.isfile(filename)
-
-    with open(filename, mode='a', newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-        if not file_exists:
-            writer.writeheader()
-
-        while True:
-            row_data = {}
-            for field in fieldnames:
-                value = input(f"Enter value for '{field}': ").strip()
-                print(f"{field}: {value}")
-                row_data[field] = value
-
-            writer.writerow(row_data)
-            print("Row added successfully.")
-
-            cont = input("Would you like to add another row? (yes/no): ").strip().lower()
-            if cont != 'yes':
-                print("Finished adding rows.")
-                break
-
-def Amplicon_names(file):
-    names = []
-    with open(file, newline='', encoding ='utf-8-sig') as f:
-        reader = csv.DictReader(f)
-
-        print("CSV Headers:", reader.fieldnames)
-        
-        for row in reader:
-            names.append(row['name'].strip().upper())
-    return names
+    # Summary of processing
+    logging.info("="*50)
+    logging.info("PIPELINE SUMMARY")
+    logging.info(f"Directories processed: {processed_count}")
+    logging.info(f"Directories skipped: {skipped_count}")
+    logging.info(f"Errors encountered: {error_count}")
+    logging.info(f"Log file saved to: {log_file}")
+    logging.info("="*50)
 
 
 
-#delimiter, column_index = directoryDelimiter()
-
-
-
-create_common_amplicon_file()
-known_names = Amplicon_names("Common_amplicon_list.csv")
-
-#Main Loop
-
-for directory in os.listdir():
-    if os.path.isdir(directory):
-        print("-----------")
-
-        os.chdir(directory)
-        print(f"The Directory is: {directory}")
-
-        #gather fastq files
-        fastq_files = gather_fastqs()
-        print(f"Our fastq file(s) are: {fastq_files}")
-
-
-        matched_name = None
-        directory_upper  = directory.upper()
-        for name in known_names:
-            if name in directory_upper:
-                matched_name = name
-                break
-        
-        if not matched_name:
-            print(f"No valid match found in amplicon list; {directory}")
-            os.chdir("..")
-            continue
-
-        searchTerm = matched_name
-        print(f"The Search Term is: {searchTerm}")
-        
-        #parts = re.split(delimiter, directory)
-        #if len(parts) < 3:
-        #    directoryErrorMessage = f"Unexpected directory name format: {directory}"
-        #    print(directoryErrorMessage) #print the error
-        #    continue #move on to the next directory
-
-
-        #getting the search term from the directory name using the dash delimiter
-        #directoryName = os.path.basename(directory)
-        #searchTerm = parts[column_index].upper()
-        #print(f"The Search Term is: {searchTerm}")
-
-
-        #getting the CRISPResso variables using the search term
-        guideSequence, ampliconSequence, guideOrientation = retrieveCRISPRessoInputs(searchTerm)
-
-        #run CRISPResso
-        run_CRISPResso(ampliconSequence, guideSequence, fastq_files)
-
-        os.chdir('..')
+if __name__ == "__main__":
+    main()
