@@ -27,8 +27,12 @@ def main():
     print_banner()
 
     #Get a list of all the names in the amplicon_list
-    amplicon_names = verify_amplicon_list("amplicon_list.csv")
-    logging.info(f"Amplicon names: {amplicon_names}")
+    try:
+        amplicon_names = verify_amplicon_list()  # Auto-search for amplicon_list file
+        logging.info(f"Amplicon names: {amplicon_names}")
+    except (ValueError, FileNotFoundError) as e:
+        logging.error(f"Amplicon list error: {e}")
+        return
 
     # Move into the /fastqs directory
     fastqs_dir = os.path.join(os.getcwd(), "fastqs")
@@ -38,6 +42,15 @@ def main():
     processed_count = 0
     skipped_count = 0
     error_count = 0
+
+    # Track specific error types
+    error_types = {
+        'missing_crispresso_output': 0,
+        'missing_correction_data': 0,
+        'amplicon_mismatch': 0,
+        'file_not_found': 0,
+        'other': 0
+    }
 
 
 
@@ -85,8 +98,29 @@ def main():
 
 
             except ValueError as e:
+                error_str = str(e)
                 logging.error(f"Skipping: {directory}: {e}")
                 error_count += 1
+                # Categorize the error
+                if "Missing correction data" in error_str:
+                    error_types['missing_correction_data'] += 1
+                elif "No amplicon" in error_str or "not found in amplicon" in error_str:
+                    error_types['amplicon_mismatch'] += 1
+                else:
+                    error_types['other'] += 1
+                continue
+            except FileNotFoundError as e:
+                logging.error(f"File not found for {directory}: {e}")
+                error_count += 1
+                if "CRISPResso" in str(e):
+                    error_types['missing_crispresso_output'] += 1
+                else:
+                    error_types['file_not_found'] += 1
+                continue
+            except Exception as e:
+                logging.error(f"Unexpected error processing {directory}: {e}")
+                error_count += 1
+                error_types['other'] += 1
                 continue
 
         else:
@@ -168,6 +202,53 @@ def main():
     logging.info(f"Standard results: {len(results)}")
     logging.info(f"Log file: {log_file}")
     logging.info("="*50)
+
+    # If errors occurred, log detailed breakdown to file only
+    if error_count > 0:
+        # Create a logger that only writes to the file (not console)
+        file_logger = logging.getLogger('file_only')
+        file_logger.setLevel(logging.INFO)
+        file_logger.propagate = False  # Don't pass messages to root logger
+        # Only add the file handler (not the console handler)
+        if not file_logger.handlers:  # Avoid adding duplicate handlers on reruns
+            for handler in logging.getLogger().handlers:
+                if isinstance(handler, logging.FileHandler):
+                    file_logger.addHandler(handler)
+                    break
+
+        file_logger.info("")
+        file_logger.info("ERROR BREAKDOWN:")
+        for err_type, count in error_types.items():
+            if count > 0:
+                file_logger.info(f"  - {err_type}: {count}")
+
+        file_logger.info("")
+        file_logger.info("LIKELY ISSUES:")
+
+        # Find the most common error
+        most_common_error = max(error_types, key=error_types.get)
+        most_common_count = error_types[most_common_error]
+
+        if most_common_count > 0:
+            if most_common_error == 'missing_crispresso_output':
+                file_logger.info("  -> Most errors are from missing CRISPResso output folders.")
+                file_logger.info("     Run CRISPResso_Loop.py first to generate the required output files.")
+            elif most_common_error == 'missing_correction_data':
+                file_logger.info("  -> Most errors are from missing correction data in CRISPResso output.")
+                file_logger.info("     Check that CRISPResso ran successfully and generated all output files.")
+            elif most_common_error == 'amplicon_mismatch':
+                file_logger.info("  -> Most errors are from amplicon name mismatches.")
+                file_logger.info("     Check that directory names match amplicon names in your amplicon list file.")
+            elif most_common_error == 'file_not_found':
+                file_logger.info("  -> Most errors are from missing files.")
+                file_logger.info("     Check that all required input files exist.")
+            else:
+                file_logger.info("  -> Review the error messages above for details.")
+
+        file_logger.info("="*50)
+
+        # Simple message to terminal
+        print(f"\n\033[1;33mSee {log_file} for error breakdown and likely cause.\033[0m")
 
 
 
