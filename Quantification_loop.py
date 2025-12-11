@@ -27,8 +27,12 @@ def main():
     print_banner()
 
     #Get a list of all the names in the amplicon_list
-    amplicon_names = verify_amplicon_list("amplicon_list.csv")
-    logging.info(f"Amplicon names: {amplicon_names}")
+    try:
+        amplicon_names = verify_amplicon_list()  # Auto-search for amplicon_list file
+        logging.info(f"Amplicon names: {amplicon_names}")
+    except (ValueError, FileNotFoundError) as e:
+        logging.error(f"Amplicon list error: {e}")
+        return
 
     # Move into the /fastqs directory
     fastqs_dir = os.path.join(os.getcwd(), "fastqs")
@@ -234,7 +238,7 @@ def main():
                 file_logger.info("     Check that CRISPResso ran successfully and generated all output files.")
             elif most_common_error == 'amplicon_mismatch':
                 file_logger.info("  -> Most errors are from amplicon name mismatches.")
-                file_logger.info("     Check that directory names match amplicon names in amplicon_list.csv.")
+                file_logger.info("     Check that directory names match amplicon names in your amplicon list file.")
             elif most_common_error == 'file_not_found':
                 file_logger.info("  -> Most errors are from missing files.")
                 file_logger.info("     Check that all required input files exist.")

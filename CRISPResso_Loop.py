@@ -19,13 +19,13 @@ def main():
 
     #Get a list of all the names in the amplicon_list
     try:
-        amplicon_names = verify_amplicon_list("amplicon_list.csv")
+        amplicon_names = verify_amplicon_list()  # Auto-search for amplicon_list file
         logging.info(f"Amplicon names: {amplicon_names}")
     except ValueError as e:
         logging.error(f"Amplicon list verification failed: {e}")
         sys.exit(1)
-    except FileNotFoundError:
-        logging.error("amplicon_list.csv not found")
+    except FileNotFoundError as e:
+        logging.error(f"Amplicon list file error: {e}")
         sys.exit(1)
 
     # Move into the /fastqs directory
@@ -166,9 +166,9 @@ def main():
                 file_logger.info("     Each directory should have 1 (single-end) or 2 (paired-end) FASTQ files.")
             elif most_common_error == 'amplicon_mismatch':
                 file_logger.info("  -> Most errors are from amplicon name mismatches.")
-                file_logger.info("     Check that directory names match amplicon names in amplicon_list.csv.")
+                file_logger.info("     Check that directory names match amplicon names in your amplicon list file.")
             elif most_common_error == 'missing_inputs':
-                file_logger.info("  -> Most errors are from missing inputs in amplicon_list.csv.")
+                file_logger.info("  -> Most errors are from missing inputs in your amplicon list file.")
                 file_logger.info("     Ensure all required columns are filled for each amplicon.")
             else:
                 file_logger.info("  -> Review the error messages above for details.")

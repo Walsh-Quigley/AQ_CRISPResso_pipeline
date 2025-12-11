@@ -2,9 +2,48 @@
 import csv
 import logging
 import shutil
+import os
 
-def verify_amplicon_list(file):
+def find_amplicon_list_file(root_dir="."):
+    """
+    Search for a file containing 'amplicon_list' in its name in the root directory.
 
+    Raises:
+        FileNotFoundError: If no matching file is found or multiple matches exist
+    """
+    matching_files = []
+
+    for file in os.listdir(root_dir):
+        if os.path.isfile(os.path.join(root_dir, file)) and "amplicon_list" in file.lower():
+            matching_files.append(file)
+
+    if len(matching_files) == 0:
+        raise FileNotFoundError(
+            f"No file containing 'amplicon_list' found in {os.path.abspath(root_dir)}"
+        )
+    elif len(matching_files) > 1:
+        raise FileNotFoundError(
+            f"Multiple files containing 'amplicon_list' found: {', '.join(matching_files)}. "
+            f"Please ensure only one amplicon list file exists in the directory."
+        )
+
+    logging.info(f"Found amplicon list file: {matching_files[0]}")
+    return matching_files[0]
+
+def verify_amplicon_list(file=None):
+    """
+    Verify the amplicon list file and return amplicon names.
+
+    Args:
+        file: Path to the amplicon list file. If None, will search for a file
+        containing 'amplicon_list' in the current directory.
+
+    Returns:
+        List of amplicon names (uppercase)
+    """
+    # If no file specified, search for it
+    if file is None:
+        file = find_amplicon_list_file()
 
     required_headers = [
         'name',

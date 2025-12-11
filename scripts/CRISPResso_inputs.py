@@ -1,5 +1,7 @@
 # scripts/CRISPResso_inputs.py
 import csv
+import os
+from scripts.verify_amplicon_list import find_amplicon_list_file
 
 def CRISPResso_inputs(matched_name):
     """
@@ -22,7 +24,7 @@ def CRISPResso_inputs(matched_name):
     # Check if matched_name is None before proceeding
     if matched_name is None:
         print("ERROR: No amplicon name provided (matched_name is None)")
-        print("This usually means the directory name didn't match any amplicon in the amplicon_list.csv")
+        print("This usually means the directory name didn't match any amplicon in the amplicon list file")
         return guide_seq, amplicon_seq, orientation, editor, intended_edit, tolerated_edits
     
     
@@ -30,14 +32,18 @@ def CRISPResso_inputs(matched_name):
 
 
     try:
-        with open("../amplicon_list.csv", newline='', encoding='utf-8-sig') as f:
+        # Search for amplicon list file in parent directory
+        amplicon_file = find_amplicon_list_file("..")
+        amplicon_file_path = os.path.join("..", amplicon_file)
+
+        with open(amplicon_file_path, newline='', encoding='utf-8-sig') as f:
             reader = csv.DictReader(f)
             found = False
 
             for row in reader:
                 if row["name"].strip().upper() == matched_name.strip().upper():
                     guide_seq = row["protospacer_or_PEG"].upper().strip()
- 
+
                     amplicon_seq = row["amplicon"].upper().strip()
                     orientation = row["guide_orientation_relative_to_amplicon"].upper().strip()
                     editor = row["editor"].upper().strip()
@@ -57,13 +63,13 @@ def CRISPResso_inputs(matched_name):
                     found = True
                     break
             if not found:
-                print(f"ERROR: Amplicon name '{matched_name}' not found in amplicon_list.csv")
-    
-    except FileNotFoundError:
-        print("ERROR: amplicon_list.csv file not found in current directory")
+                print(f"ERROR: Amplicon name '{matched_name}' not found in amplicon list file")
+
+    except FileNotFoundError as e:
+        print(f"ERROR: Amplicon list file error: {e}")
     except KeyError as e:
-        print(f"ERROR: Missing expected column in amplicon_list.csv: {e}")
+        print(f"ERROR: Missing expected column in amplicon list file: {e}")
     except Exception as e:
-        print(f"ERROR: Unexpected error reading amplicon_list.csv: {e}")
+        print(f"ERROR: Unexpected error reading amplicon list file: {e}")
      
     return guide_seq, amplicon_seq, orientation, editor, intended_edit, tolerated_edits
