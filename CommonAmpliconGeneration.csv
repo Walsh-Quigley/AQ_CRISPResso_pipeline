@@ -1,2 +1,2 @@
-Name,Protospacer_sequence,Editor,Guide Orientation relative to amplicon,Amplicon,note,Tolerated Sequences,Tolerated positions,Intended Edits
-PAH1,TCA...,ABE,F,CCt...,P281L,TCA...,16,5
+name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit
+PAH1,TCA...,ABE,F,CCt...,P281L,16,5
