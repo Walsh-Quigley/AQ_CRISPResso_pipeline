@@ -1,4 +1,5 @@
-# AQ CRISPResso Pipeline
+# AQ CRISPResso Pipeline 
+
 ## Introduction
 This pipeline allows the automation of CRISPResso analysis on fastq files with minimum amount of user input as well as creating a summary of the relevant information created by the CRISPResso function. 
 
