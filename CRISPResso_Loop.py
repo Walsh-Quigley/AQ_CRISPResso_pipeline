@@ -79,10 +79,16 @@ def main():
                 
                 # Handle PE cases
                 if editor == "PE":
-                    logging.warning("PE editor case not yet implemented")
-                    skipped_count += 1
                     continue
-                
+                    logging.info(f"Running CRISPResso for PE editor on {directory}")
+                    success, error_type = run_CRISPResso(guide_seq, amplicon_seq, orientation, editor, directory_path)
+                    if success:
+                        processed_count += 1
+                        logging.info(f"Successfully processed {directory}")
+                    else:
+                        error_count += 1
+                        if error_type in error_types:
+                            error_types[error_type] += 1
                 # Handle CBE cases
                 if editor == "CBE":
                     logging.warning("CBE editor case not yet implemented")
