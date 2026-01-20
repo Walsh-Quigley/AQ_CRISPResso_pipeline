@@ -1,7 +1,84 @@
-# scripts/identify_independent_correction.py
 import os
 import glob
 import csv
+import logging
+from .reverse_complement import reverse_complement
+from scripts.logging_setup import setup_logging
+
+
+
+
+def non_tol_A_to_G(orientation, intended_edit, guide_seq, directory_path, tolerated_edits):
+    #log_file = setup_logging()
+    
+    if orientation == "F":
+        target_base = "G"
+        original_base = "A"
+    elif orientation == "R":
+        intended_edit = len(guide_seq) - intended_edit + 1
+        target_base = "C"
+        original_base = "T"
+        guide_seq = reverse_complement(guide_seq)
+    #else:
+        #logging.error(f"invalid orientation: {orientation}")
+
+    if tolerated_edits:
+        if orientation == "F":
+            tolerated_indexes = [x - 1 for x in tolerated_edits]
+        elif orientation == "R":
+            tolerated_indexes = [len(guide_seq) - x for x in tolerated_edits]
+    else:
+        tolerated_indexes = []
+    
+    crispr_dirs = []
+    for d in glob.glob(os.path.join(directory_path, "CRISPResso_on_*")):
+        if os.path.isdir(d):
+            crispr_dirs.append(d)
+    
+    #if not crispr_dirs:
+        #logging.error(f"no CRISPResso directories found")
+
+    crispresso_subfolder = crispr_dirs[0]
+    alleles_freqency_table_path = glob.glob(os.path.join(crispresso_subfolder, "Alleles_frequency_table_around_*"))
+    #if not alleles_freqency_table_path:
+        #logging.error(f"could not find allele frequency table")
+    
+    f = open(alleles_freqency_table_path[0], newline='')
+    reader = csv.reader(f, delimiter="\t")
+    table = []
+    for row in reader:
+        table.append(row)
+    f.close()
+
+    total_reads_any = 0
+    total_reads_correct_index = 0
+    total_reads_A_to_G = 0
+    A_to_G_sequences = []
+
+    for row in table[1:]:
+        cur_sequence = row[0]
+        reads = int(row[6])
+        total_reads_any += reads
+
+        if cur_sequence[intended_edit - 1] == target_base:
+            total_reads_correct_index += reads
+            
+            for i in range(len(guide_seq)):
+                if i == intended_edit - 1 or i in tolerated_indexes:
+                    continue
+                if guide_seq[i] == original_base and cur_sequence[i] == target_base:
+                    total_reads_A_to_G += reads
+                    A_to_G_sequences.append(cur_sequence)
+                    break
+
+
+    indep_corrections = (total_reads_correct_index/total_reads_any) * 100
+    non_tolerated_A_to_G = (total_reads_A_to_G/total_reads_any) * 100
+
+    return (indep_corrections, non_tolerated_A_to_G)
+
+
+
 
 
 def identify_independent_correction(orientation, intended_edit, directory_path):

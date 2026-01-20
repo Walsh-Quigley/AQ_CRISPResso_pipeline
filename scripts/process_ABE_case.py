@@ -7,6 +7,7 @@ from .generate_search_sequences import generate_search_sequences
 from .read_extraction import read_extraction
 from .filter_alleles_file import filter_alleles_file
 from .identify_independent_correction import identify_independent_correction
+from .identify_independent_correction import non_tol_A_to_G
 
 
 def process_ABE_case(directory_path, guide_seq, orientation, editor, intended_edit, tolerated_edits):
@@ -32,13 +33,14 @@ def process_ABE_case(directory_path, guide_seq, orientation, editor, intended_ed
     correction_with_bystander, correction_without_bystanders = filter_alleles_file(search_strings, directory_path)
 
     #identify independent correction from CRISPResso_output*/Quantification_window_nucleotide_percentage_table.txt
-    independent_correction = identify_independent_correction(orientation, intended_edit, directory_path)
+    #independent_correction = identify_independent_correction(orientation, intended_edit, directory_path)
+    independent_correction, non_tolerated_A_to_G = non_tol_A_to_G(orientation, intended_edit, guide_seq, directory_path, tolerated_edits)    
 
     #Extract sample name
     directory_name = os.path.basename(directory_path.rstrip('/'))
     sample_name = re.sub(r'(_L\d{3})?-ds\..*', '', directory_name)
     
-    if  correction_with_bystander == "NA" or correction_without_bystanders == "NA" or independent_correction == "NA":
+    if correction_with_bystander == "NA" or correction_without_bystanders == "NA" or independent_correction == "NA" or non_tolerated_A_to_G == "NA":
         error_msg = f"Missing correction data for {sample_name}: " \
                     f"with_bystanders={correction_with_bystander}, " \
                     f"without_bystanders={correction_without_bystanders},"\
@@ -72,6 +74,7 @@ def process_ABE_case(directory_path, guide_seq, orientation, editor, intended_ed
         "correction_with_bystanders":correction_with_bystander,
         "correction_without_bystanders":correction_without_bystanders,
         "independent_correction": independent_correction,
+        "non_tolerated_A_to_G": non_tolerated_A_to_G,
         "indep_less_w_bystanders": indep_less_w_bystanders,
         "w_bystanders_less_wo_bystanders": w_bystanders_less_wo_bystanders,
         "target_locus":guide_seq,

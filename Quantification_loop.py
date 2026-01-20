@@ -153,6 +153,7 @@ def main():
                                             "correction_with_bystanders",
                                             "correction_without_bystanders",
                                             "independent_correction",
+                                            "non_tolerated_A_to_G",
                                             "indep_less_w_bystanders",
                                             "w_bystanders_less_wo_bystanders",
                                             "target_locus",
