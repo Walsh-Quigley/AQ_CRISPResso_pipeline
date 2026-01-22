@@ -6,8 +6,9 @@ import logging
 from .generate_search_sequences import generate_search_sequences
 from .read_extraction import read_extraction
 from .filter_alleles_file import filter_alleles_file
+from .filter_alleles_file import filter_alleles_file_hetero
 from .identify_independent_correction import identify_independent_correction
-from .identify_independent_correction import non_tol_A_to_G
+from .identify_independent_correction import total_A_to_G
 
 
 def process_ABE_case(directory_path, guide_seq, orientation, editor, intended_edit, tolerated_edits):
@@ -31,33 +32,35 @@ def process_ABE_case(directory_path, guide_seq, orientation, editor, intended_ed
 
     #filter CRISPResso_ouput*/alleles_frequency_table file for search sequences
     correction_with_bystander, correction_without_bystanders = filter_alleles_file(search_strings, directory_path)
+    pct_w_base1, pct_w_base2, pct_wo_base1, pct_wo_base2, het_pos, base1, base2 = filter_alleles_file_hetero(search_strings, directory_path, orientation, guide_seq)
+
 
     #identify independent correction from CRISPResso_output*/Quantification_window_nucleotide_percentage_table.txt
     #independent_correction = identify_independent_correction(orientation, intended_edit, directory_path)
-    independent_correction, non_tolerated_A_to_G = non_tol_A_to_G(orientation, intended_edit, guide_seq, directory_path, tolerated_edits)    
+    correction_with_any_change_in_protospacer, total_A_to_G_value = total_A_to_G(orientation, intended_edit, guide_seq, directory_path, tolerated_edits)    
 
     #Extract sample name
     directory_name = os.path.basename(directory_path.rstrip('/'))
     sample_name = re.sub(r'(_L\d{3})?-ds\..*', '', directory_name)
     
-    if correction_with_bystander == "NA" or correction_without_bystanders == "NA" or independent_correction == "NA" or non_tolerated_A_to_G == "NA":
+    if correction_with_bystander == "NA" or correction_without_bystanders == "NA" or correction_with_any_change_in_protospacer == "NA" or total_A_to_G_value == "NA":
         error_msg = f"Missing correction data for {sample_name}: " \
                     f"with_bystanders={correction_with_bystander}, " \
                     f"without_bystanders={correction_without_bystanders},"\
-                    f"independent_correction={independent_correction}"
+                    f"independent_correction={correction_with_any_change_in_protospacer}"
         logging.error(error_msg)
         raise ValueError(error_msg)
+    
 
     #log the outputs for the user
     logging.info(f"The directory {directory_path} has the following metrics")
     logging.info(f"correction_with_bystander: {correction_with_bystander}")
     logging.info(f"correction_without_bystanders: {correction_without_bystanders}")
-    logging.info(f"frequency of correction independent of read: {independent_correction}")
-
+    logging.info(f"frequency of correction independent of read: {correction_with_any_change_in_protospacer}")
 
     #get the read counts:
     reads_aligned, reads_total = read_extraction(directory_path)
-    indep_less_w_bystanders = independent_correction - correction_with_bystander
+    indep_less_w_bystanders = correction_with_any_change_in_protospacer - correction_with_bystander
     w_bystanders_less_wo_bystanders = correction_with_bystander - correction_without_bystanders
     
     # Warn about unexpected negative values but keep the numbers
@@ -73,10 +76,16 @@ def process_ABE_case(directory_path, guide_seq, orientation, editor, intended_ed
         "reads_total": reads_total,
         "correction_with_bystanders":correction_with_bystander,
         "correction_without_bystanders":correction_without_bystanders,
-        "independent_correction": independent_correction,
-        "non_tolerated_A_to_G": non_tolerated_A_to_G,
+        "correction_with_any_change_in_protospacer": correction_with_any_change_in_protospacer,
+        "total_A_to_G_changes": total_A_to_G_value,
         "indep_less_w_bystanders": indep_less_w_bystanders,
         "w_bystanders_less_wo_bystanders": w_bystanders_less_wo_bystanders,
+        "correction_w_bystanders_allele1": pct_w_base1,
+        "correction_w_bystanders_allele2": pct_w_base2,
+        "correction_wo_bystanders_allele1": pct_wo_base1,
+        "correction_wo_bystanders_allele2": pct_wo_base2,
+        "het_position": het_pos,
+        "het_alleles": f"{base1}/{base2}" if het_pos != "NA" else "NA",
         "target_locus":guide_seq,
         "perfect_correction":search_strings[0],
         "corrected_locus_with_bystanders": ";".join(search_strings)

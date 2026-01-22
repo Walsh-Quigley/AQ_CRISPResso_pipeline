@@ -8,7 +8,7 @@ from scripts.logging_setup import setup_logging
 
 
 
-def non_tol_A_to_G(orientation, intended_edit, guide_seq, directory_path, tolerated_edits):
+def total_A_to_G(orientation, intended_edit, guide_seq, directory_path, tolerated_edits):
     #log_file = setup_logging()
     
     if orientation == "F":
@@ -19,16 +19,6 @@ def non_tol_A_to_G(orientation, intended_edit, guide_seq, directory_path, tolera
         target_base = "C"
         original_base = "T"
         guide_seq = reverse_complement(guide_seq)
-    #else:
-        #logging.error(f"invalid orientation: {orientation}")
-
-    if tolerated_edits:
-        if orientation == "F":
-            tolerated_indexes = [x - 1 for x in tolerated_edits]
-        elif orientation == "R":
-            tolerated_indexes = [len(guide_seq) - x for x in tolerated_edits]
-    else:
-        tolerated_indexes = []
     
     crispr_dirs = []
     for d in glob.glob(os.path.join(directory_path, "CRISPResso_on_*")):
@@ -64,7 +54,7 @@ def non_tol_A_to_G(orientation, intended_edit, guide_seq, directory_path, tolera
             total_reads_correct_index += reads
             
             for i in range(len(guide_seq)):
-                if i == intended_edit - 1 or i in tolerated_indexes:
+                if i == intended_edit - 1:
                     continue
                 if guide_seq[i] == original_base and cur_sequence[i] == target_base:
                     total_reads_A_to_G += reads
@@ -72,14 +62,10 @@ def non_tol_A_to_G(orientation, intended_edit, guide_seq, directory_path, tolera
                     break
 
 
-    indep_corrections = (total_reads_correct_index/total_reads_any) * 100
-    non_tolerated_A_to_G = (total_reads_A_to_G/total_reads_any) * 100
+    correction_with_any_change_in_protospacer = (total_reads_correct_index/total_reads_any) * 100
+    total_A_to_G = (total_reads_A_to_G/total_reads_any) * 100
 
-    return (indep_corrections, non_tolerated_A_to_G)
-
-
-
-
+    return (correction_with_any_change_in_protospacer, total_A_to_G)
 
 def identify_independent_correction(orientation, intended_edit, directory_path):
 
