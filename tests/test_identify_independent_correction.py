@@ -9,10 +9,10 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from scripts.identify_independent_correction import non_tol_A_to_G
+from scripts.identify_independent_correction import total_A_to_G
 
-class TestNonTolAtoG:
-    """test case for non_tol_A_to_G"""
+class TestTotalAtoG:
+    """test case for total_A_to_G"""
     @pytest.fixture
     def temp_crispresso_dir(self):
         """Create tempororary directory structure mimicking CRISPResso output"""
@@ -35,15 +35,16 @@ class TestNonTolAtoG:
 
     def test_forward_intended_edit_only(self, temp_crispresso_dir):
         """forward orientation, 50% have intended edit, 50% dont.
-        expected: indep = 50%, non_tol_a_to_g = 0%"""
+        Since the only change is the intended A->G edit, pct_A_to_G should equal indep.
+        expected: indep = 50%, pct_A_to_G = 50%"""
         temp_dir, crispresso_subdir = temp_crispresso_dir
         guide_seq = "ACGTACGTACGTACGTACGT"
         rows = [
-            ("ACGTGCGTACGTACGTACGT", 50),
-            ("ACGTACGTACGTACGTACGT", 50),
+            ("ACGTGCGTACGTACGTACGT", 50),  # Has intended A->G at pos 5, only A->G change
+            ("ACGTACGTACGTACGTACGT", 50),  # No edit
         ]
         self.create_alleles_file(crispresso_subdir, rows)
-        indep, non_tol = non_tol_A_to_G(
+        indep, pct_A_to_G = total_A_to_G(
             orientation="F",
             intended_edit=5,
             guide_seq=guide_seq,
@@ -52,7 +53,7 @@ class TestNonTolAtoG:
         )
 
         assert indep == 50.0
-        assert non_tol == 0.0
+        assert pct_A_to_G == 50.0  # Only A->G changes, so equals indep
 
     def test_reverse_intended_edit_only(self, temp_crispresso_dir):
         """reverse orientation, 50% have intended edit, 50% dont.
@@ -64,7 +65,7 @@ class TestNonTolAtoG:
             ("ACGTACGTACGTACGTACGT", 50),
         ]
         self.create_alleles_file(crispresso_subdir, rows)
-        indep, non_tol = non_tol_A_to_G(
+        indep, pct_A_to_G = total_A_to_G(
             orientation="R",
             intended_edit=5,
             guide_seq=guide_seq,
@@ -73,7 +74,7 @@ class TestNonTolAtoG:
         )
 
         assert indep == 50.0
-        assert non_tol == 0.0
+        assert pct_A_to_G == 50.0
 
     def test_forward_intended_edit_and_A_to_G(self, temp_crispresso_dir):
         """forward orientation, 50% have intended edit, 25% have intendeded edit as well 
@@ -87,7 +88,7 @@ class TestNonTolAtoG:
             ("GCGTACGTACGTACGTACGT", 25),
         ]
         self.create_alleles_file(crispresso_subdir, rows)
-        indep, non_tol = non_tol_A_to_G(
+        indep, pct_A_to_G = total_A_to_G(
             orientation="F",
             intended_edit=5,
             guide_seq=guide_seq,
@@ -96,7 +97,7 @@ class TestNonTolAtoG:
         )
 
         assert indep == 25.0
-        assert non_tol == 25.0
+        assert pct_A_to_G == 25.0
 
 ##need a case with tolerated edits
 
