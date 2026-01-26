@@ -115,6 +115,8 @@ def filter_alleles_file_hetero(search_strings, directory_path, orientation, guid
         return "NA", "NA", "NA", "NA", "NA", "NA", "NA"
 
     allele_file = allele_files[0]
+    write_hetero_frequency_tables(allele_file, het_pos, base1, base2, directory_path)
+
 
     filtered_rows_w_base1 = []
     filtered_rows_w_base2 = []
@@ -163,3 +165,37 @@ def filter_alleles_file_hetero(search_strings, directory_path, orientation, guid
     pct_wo_base2 = (reads_wo_base2 / total_reads_base2 * 100) if total_reads_base2 > 0 else 0
 
     return pct_w_base1, pct_w_base2, pct_wo_base1, pct_wo_base2, het_pos + 1, base1, base2
+
+def write_hetero_frequency_tables(allele_file, het_pos, base1, base2, directory_path):
+    """
+    Split the allele frequency table into two files based on het position.
+    """
+    rows_allele1 = []
+    rows_allele2 = []
+    
+    with open(allele_file, newline='', encoding='utf-8-sig') as infile:
+        reader = csv.reader(infile, delimiter='\t')
+        header = next(reader)
+        
+        for row in reader:
+            sequence = row[0]
+            if sequence[het_pos] == base1:
+                rows_allele1.append(row)
+            elif sequence[het_pos] == base2:
+                rows_allele2.append(row)
+    
+    # Write allele 1 file
+    output_file_allele1 = os.path.join(directory_path, f"AQ_allele_frequency_table_pos{het_pos + 1}_{base1}.csv")
+    with open(output_file_allele1, 'w', newline='', encoding='utf-8-sig') as outfile:
+        writer = csv.writer(outfile)
+        writer.writerow(header)
+        writer.writerows(rows_allele1)
+    
+    # Write allele 2 file
+    output_file_allele2 = os.path.join(directory_path, f"AQ_allele_frequency_table_pos{het_pos + 1}_{base2}.csv")
+    with open(output_file_allele2, 'w', newline='', encoding='utf-8-sig') as outfile:
+        writer = csv.writer(outfile)
+        writer.writerow(header)
+        writer.writerows(rows_allele2)
+    
+    print(f"Allele frequency tables written to {output_file_allele1} and {output_file_allele2}")
