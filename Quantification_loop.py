@@ -147,18 +147,86 @@ def main():
 
     #Saving non ONE-seq results if any
     if results:
+        # Define base columns (always included)
+        base_columns = [
+            "sample",
+            "reads_aligned",
+            "reads_total",
+            "correction_without_bystanders",
+            "correction_with_bystanders",
+            "correction_with_any_AtoG_change",
+            "correction_with_any_change_in_protospacer",
+            "column E minus column D",
+            "column F minus column E",
+            "column G minus column F",
+            "target_locus",
+            "perfect_correction",
+            "corrected_locus_with_bystanders"
+        ]
+
+        # Define het columns (only included if any sample has het)
+        het_columns = [
+            "correction_without_bystanders_allele1",
+            "correction_with_bystanders_allele1",
+            "correction_with_any_AtoG_change_allele1",
+            "correction_with_any_change_in_protospacer_allele1",
+            "column L minus column K",
+            "column M minus column L",
+            "column N minus column M",
+            "correction_without_bystanders_allele2",
+            "correction_with_bystanders_allele2",
+            "correction_with_any_AtoG_change_allele2",
+            "correction_with_any_change_in_protospacer_allele2",
+            "column S minus column R",
+            "column T minus column S",
+            "column U minus column T",
+            "het_position",
+            "het_alleles"
+        ]
+
+        # Check if ANY sample has het data
+        any_het = any("het_position" in r for r in results)
+
+        # Build final column list
+        if any_het:
+            columns = base_columns[:10] + het_columns + base_columns[10:]
+        else:
+            columns = base_columns
+
+        df = pd.DataFrame(results, columns=columns)
+  
+        """
+    if results:
         df = pd.DataFrame(results, columns=["sample",
                                             "reads_aligned",
                                             "reads_total",
-                                            "correction_with_bystanders",
                                             "correction_without_bystanders",
-                                            "independent_correction",
-                                            "non_tolerated_A_to_G",
-                                            "indep_less_w_bystanders",
-                                            "w_bystanders_less_wo_bystanders",
+                                            "correction_with_bystanders",
+                                            "correction_with_any_AtoG_change",
+                                            "correction_with_any_change_in_protospacer",
+                                            "column E minus column D",
+                                            "column F minus column E",
+                                            "column G minus column F",
+                                            "correction_without_bystanders_allele1",
+                                            "correction_with_bystanders_allele1",
+                                            "correction_with_any_AtoG_change_allele1",
+                                            "correction_with_any_change_in_protospacer_allele1",
+                                            "column L minus column K",
+                                            "column M minus column L",
+                                            "column N minus column M",
+                                            "correction_without_bystanders_allele2",
+                                            "correction_with_bystanders_allele2",
+                                            "correction_with_any_AtoG_change_allele2",
+                                            "correction_with_any_change_in_protospacer_allele2",
+                                            "column S minus column R",
+                                            "column T minus column S",
+                                            "column U minus column T",
+                                            "het_position",
+                                            "het_alleles",
                                             "target_locus",
                                             "perfect_correction",
                                             "corrected_locus_with_bystanders"])
+        """  
         
         #adding unanalyzed directories to the main results dataframe
         df = add_unanalyzed_directories(
@@ -176,6 +244,7 @@ def main():
         df = df.sort_values(by="sample")
 
         # Prompt user to generate Prism formatted CSV
+        """
         if yes_no("Would you like to generate a csv output formatted for prism?"):
             logging.info("="*50)
             logging.info("Performing Prism csv generation")
@@ -185,7 +254,7 @@ def main():
             logging.info(f"Prism formatted csv saved to: {prism_csv_file}")
         else:
             logging.info("Skipping Prism CSV generation")
-
+        """
         
         # save to CSV in the current working directory
         out_file = os.path.join(os.getcwd(), "quantification_summary.csv")

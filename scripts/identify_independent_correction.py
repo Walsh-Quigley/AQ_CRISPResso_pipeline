@@ -4,11 +4,11 @@ import csv
 import logging
 from .reverse_complement import reverse_complement
 from scripts.logging_setup import setup_logging
+from .filter_alleles_file import find_het_position
 
 
 
-
-def non_tol_A_to_G(orientation, intended_edit, guide_seq, directory_path, tolerated_edits):
+def total_A_to_G_hetero(orientation, intended_edit, guide_seq, directory_path, tolerated_edits):
     #log_file = setup_logging()
     
     if orientation == "F":
@@ -19,16 +19,98 @@ def non_tol_A_to_G(orientation, intended_edit, guide_seq, directory_path, tolera
         target_base = "C"
         original_base = "T"
         guide_seq = reverse_complement(guide_seq)
-    #else:
-        #logging.error(f"invalid orientation: {orientation}")
+    
+    crispr_dirs = []
+    for d in glob.glob(os.path.join(directory_path, "CRISPResso_on_*")):
+        if os.path.isdir(d):
+            crispr_dirs.append(d)
+    
+    #if not crispr_dirs:
+        #logging.error(f"no CRISPResso directories found")
 
-    if tolerated_edits:
-        if orientation == "F":
-            tolerated_indexes = [x - 1 for x in tolerated_edits]
-        elif orientation == "R":
-            tolerated_indexes = [len(guide_seq) - x for x in tolerated_edits]
-    else:
-        tolerated_indexes = []
+    crispresso_subfolder = crispr_dirs[0]
+
+    het_pos, base1, base2 = find_het_position(crispresso_subfolder)
+    if het_pos is None:
+        print(f"No heterozygous position found in {crispresso_subfolder}")
+        return "NA", "NA", "NA", "NA"
+    
+    alleles_freqency_table_path = glob.glob(os.path.join(crispresso_subfolder, "Alleles_frequency_table_around_*"))
+    #if not alleles_freqency_table_path:
+        #logging.error(f"could not find allele frequency table")
+    
+    f = open(alleles_freqency_table_path[0], newline='')
+    reader = csv.reader(f, delimiter="\t")
+    table = []
+    for row in reader:
+        table.append(row)
+    f.close()
+
+    #allele 1:
+    total_reads_base1 = 0
+    correct_index_base1 = 0
+    A_to_G_base1 = 0
+
+    #allele 2:
+    total_reads_base2 = 0
+    correct_index_base2 = 0
+    A_to_G_base2 = 0
+
+    for row in table[1:]:
+        cur_sequence = row[0]
+        reads = int(row[6])
+        
+        if cur_sequence[het_pos] == base1:
+            total_reads_base1 += reads
+            if cur_sequence[intended_edit - 1] == target_base:
+                correct_index_base1 += reads
+                has_non_AtoG_change = False
+                for i in range(len(guide_seq)):
+                    if cur_sequence[i] != guide_seq[i]:
+                        if not (guide_seq[i] == original_base and cur_sequence[i] == target_base):
+                            has_non_AtoG_change = True
+                            break
+                if not has_non_AtoG_change:
+                    A_to_G_base1 += reads
+
+
+        elif cur_sequence[het_pos] == base2:
+            total_reads_base2 += reads
+            if cur_sequence[intended_edit - 1] == target_base:
+                correct_index_base2 += reads
+                has_non_AtoG_change = False
+                for i in range(len(guide_seq)):
+                    if cur_sequence[i] != guide_seq[i]:
+                        if not (guide_seq[i] == original_base and cur_sequence[i] == target_base):
+                            has_non_AtoG_change = True
+                            break
+                if not has_non_AtoG_change:
+                    A_to_G_base2 += reads
+
+    correction_with_any_change_in_protospacer_allele1 = ((correct_index_base1/total_reads_base1) * 100) if total_reads_base1 > 0 else 0
+    correction_with_any_change_in_protospacer_allele2 = ((correct_index_base2/total_reads_base2) * 100) if total_reads_base2 > 0 else 0
+   
+    pct_A_to_G_base1 = ((A_to_G_base1/total_reads_base1) * 100) if total_reads_base1 > 0 else 0
+    pct_A_to_G_base2 = ((A_to_G_base2/total_reads_base2) * 100) if total_reads_base2 > 0 else 0
+
+
+    return (correction_with_any_change_in_protospacer_allele1, 
+            correction_with_any_change_in_protospacer_allele2,
+            pct_A_to_G_base1,
+            pct_A_to_G_base2)
+
+
+def total_A_to_G(orientation, intended_edit, guide_seq, directory_path, tolerated_edits):
+    #log_file = setup_logging()
+    
+    if orientation == "F":
+        target_base = "G"
+        original_base = "A"
+    elif orientation == "R":
+        intended_edit = len(guide_seq) - intended_edit + 1
+        target_base = "C"
+        original_base = "T"
+        guide_seq = reverse_complement(guide_seq)
     
     crispr_dirs = []
     for d in glob.glob(os.path.join(directory_path, "CRISPResso_on_*")):
@@ -53,7 +135,7 @@ def non_tol_A_to_G(orientation, intended_edit, guide_seq, directory_path, tolera
     total_reads_any = 0
     total_reads_correct_index = 0
     total_reads_A_to_G = 0
-    A_to_G_sequences = []
+    #A_to_G_sequences = []
 
     for row in table[1:]:
         cur_sequence = row[0]
@@ -63,23 +145,21 @@ def non_tol_A_to_G(orientation, intended_edit, guide_seq, directory_path, tolera
         if cur_sequence[intended_edit - 1] == target_base:
             total_reads_correct_index += reads
             
+            has_non_AtoG_change = False
             for i in range(len(guide_seq)):
-                if i == intended_edit - 1 or i in tolerated_indexes:
-                    continue
-                if guide_seq[i] == original_base and cur_sequence[i] == target_base:
-                    total_reads_A_to_G += reads
-                    A_to_G_sequences.append(cur_sequence)
-                    break
+                if cur_sequence[i] != guide_seq[i]:
+                    if not (guide_seq[i] == original_base and cur_sequence[i] == target_base):
+                        has_non_AtoG_change = True
+                        break
+
+            if not has_non_AtoG_change:
+                total_reads_A_to_G += reads
 
 
-    indep_corrections = (total_reads_correct_index/total_reads_any) * 100
-    non_tolerated_A_to_G = (total_reads_A_to_G/total_reads_any) * 100
+    correction_with_any_change_in_protospacer = (total_reads_correct_index/total_reads_any) * 100
+    pct_A_to_G = (total_reads_A_to_G/total_reads_any) * 100
 
-    return (indep_corrections, non_tolerated_A_to_G)
-
-
-
-
+    return (correction_with_any_change_in_protospacer, pct_A_to_G)
 
 def identify_independent_correction(orientation, intended_edit, directory_path):
 

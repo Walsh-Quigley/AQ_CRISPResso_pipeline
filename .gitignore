@@ -13,3 +13,6 @@ fastqs/
 
 #Log files
 logs/
+
+#Amplicon_list
+*amplicon_list*
