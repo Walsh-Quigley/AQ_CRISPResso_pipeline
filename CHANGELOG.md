@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.3] - 2026-01-28
+
+### Added
+
+- **Prism CSV generation for heterozygous samples**:
+  - New function `generate_prism_csv_het()` in `scripts/generate_prism_csv.py`
+  - Outputs separate files: `prism_formatted_output_het_allele1.csv` and `prism_formatted_output_het_allele2.csv`
+  - Allele-specific files contain the same column structure as non-het prism output
+
+- **Allele read counts** in heterozygous output:
+  - New columns `reads_aligned_allele1` and `reads_aligned_allele2` in quantification summary
+  - `total_A_to_G_hetero()` now returns read counts per allele
+
+- **Test suite** for core functionality:
+  - `tests/test_het_cases.py` - heterozygous detection and processing tests
+  - `tests/test_identify_independent_correction.py` - independent correction calculation tests
+  - `tests/verify_allele_results.py` - allele filtering verification
+
+- **README documentation** for heterozygous output format and column descriptions
+
+### Changed
+
+- **Re-enabled Prism CSV generation** in `Quantification_loop.py`:
+  - Now splits output by het vs non-het samples
+  - Het samples generate allele-specific Prism files
+
+- **Column naming in Prism output** - standardized to "minus" convention:
+  - `w_bystanders_less_wo_bystanders` → `w_bystanders_minus_wo_bystanders`
+  - `indep_less_w_bystanders` → `any_AtoG_minus_w_bystanders`
+  - Added `any_protospacer_change_minus_any_AtoG` column
+
+- **Cleaned up** commented-out code blocks in `scripts/process_ABE_case.py`
+
 ## [1.0.2] - 2026-01-26
 
 ### Changed
