@@ -222,17 +222,17 @@ The information displayed in a heterozygous case will be in the following format
 | M | Correction with any A to G change allele 1 | Percentage of reads where correction exists at intended position, allowing for intended bystanders, as well as any A to G changes along the protospacer, as a portion of all reads from allele 1 
 | N | Correction with any change in protospacer allele 1 | Percentage of reads where the correction exists at intended position, independent of any other changes within the protospacer, as a portion of reads from allele 1
 | O | Column L minus column K | Correction with bystanders MINUS correction without bystanders, for allele 1 reads
-| P | Column M minus column L | Correctiom with any A to G change MINUS correction with bystanders, for allele 1 reads
+| P | Column M minus column L | Correction with any A to G change MINUS correction with bystanders, for allele 1 reads
 | Q | Column N minus column M | Correction with any changes in protospacer MINUS correction with any A to G changes, for allele 1 reads
 | R | Correction without bystanders allele 2 | Percentage of reads where correction exists at intended position, with no other edit, as a portion of all reads from allele 2
 | S | Correction with bystanders allele 2 | Percentage of reads where correction exists at intended position, allowing for tolerated bystanders, as a portion of all reads from allele 2
 | T | Correction with any A to G change allele 2 | Percentage of reads where correction exists at intended position, allowing for intended bystanders, as well as any A to G changes along the protospacer, as a portion of all reads from allele 2
 | U | Correction with any change in protospacer allele 2 | Percentage of reads where the correction exists at intended position, independent of any other changes within the protospacer, as a portion of reads from allele 2
 | V | Column S minus column R | Correction with bystanders MINUS correction without bystanders, for allele 2 reads
-| W | Column T minus column S | Correctiom with any A to G change MINUS correction with bystanders, for allele 2 reads
+| W | Column T minus column S | Correction with any A to G change MINUS correction with bystanders, for allele 2 reads
 | X | Column U minus column T | Correction with any changes in protospacer MINUS correction with any A to G changes, for allele 2 reads
 | Y | Heterozygous position | The location within the protospacer that is used as the anchor position for heterozygous sorting
-| Z | Heteroyzgous alleles | The nucleotide at the heterozygous anchor position for each allele respectivly
+| Z | Heterozygous alleles | The nucleotide at the heterozygous anchor position for each allele respectivly
 | AA | Reads aligned allele 1 | Total number of reads that contain allele 1's nucleotide at heterozygous anchor position
 | AB | Reads aligned allele 2 | Total number of reads that contain allele 2's nucleotide at heterozygous anchor position
 | AC | Target locus | Guide sequence used for a given sample |
