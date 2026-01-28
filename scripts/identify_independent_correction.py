@@ -97,7 +97,9 @@ def total_A_to_G_hetero(orientation, intended_edit, guide_seq, directory_path, t
     return (correction_with_any_change_in_protospacer_allele1, 
             correction_with_any_change_in_protospacer_allele2,
             pct_A_to_G_base1,
-            pct_A_to_G_base2)
+            pct_A_to_G_base2,
+            total_reads_base1,
+            total_reads_base2)
 
 
 def total_A_to_G(orientation, intended_edit, guide_seq, directory_path, tolerated_edits):

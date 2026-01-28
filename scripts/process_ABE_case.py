@@ -43,13 +43,15 @@ def process_ABE_case(directory_path, guide_seq, orientation, editor, intended_ed
     if het_pos is not None:
         # Het found - call het functions
         pct_w_base1, pct_w_base2, pct_wo_base1, pct_wo_base2, het_pos_display, base1, base2 = filter_alleles_file_hetero(search_strings, directory_path, orientation, guide_seq)
-        correction_protospacer_allele1, correction_protospacer_allele2, pct_A_to_G_allele1, pct_A_to_G_allele2 = total_A_to_G_hetero(orientation, intended_edit, guide_seq, directory_path, tolerated_edits)
+        correction_protospacer_allele1, correction_protospacer_allele2, pct_A_to_G_allele1, pct_A_to_G_allele2, reads_aligned_allele1, reads_aligned_allele2 = total_A_to_G_hetero(orientation, intended_edit, guide_seq, directory_path, tolerated_edits)
     else:
         # No het - set all to NA
         pct_w_base1 = pct_w_base2 = pct_wo_base1 = pct_wo_base2 = "NA"
         het_pos_display = base1 = base2 = "NA"
         correction_protospacer_allele1 = correction_protospacer_allele2 = "NA"
         pct_A_to_G_allele1 = pct_A_to_G_allele2 = "NA"
+        reads_aligned_allele1 = reads_aligned_allele2 = "NA"
+
 
     #identify independent correction from CRISPResso_output*/Quantification_window_nucleotide_percentage_table.txt
     #independent_correction = identify_independent_correction(orientation, intended_edit, directory_path)
@@ -139,44 +141,8 @@ def process_ABE_case(directory_path, guide_seq, orientation, editor, intended_ed
             
             "het_position": het_pos_display, #Y
             "het_alleles": f"{base1}/{base2}" if het_pos_display != "NA" else "NA", #Z
+            "reads_aligned_allele1": reads_aligned_allele1, #AD
+            "reads_aligned_allele2": reads_aligned_allele2, #AE
     })
-
-
-    """
-    result = {
-        "sample":sample_name, #A
-        "reads_aligned": reads_aligned, #B
-        "reads_total": reads_total, #C
-
-        "correction_without_bystanders":correction_without_bystanders, #D
-        "correction_with_bystanders":correction_with_bystander, #E
-        "correction_with_any_AtoG_change": pct_A_to_G_value, #F
-        "correction_with_any_change_in_protospacer": correction_with_any_change_in_protospacer, #G
-        "column E minus column D": w_bystanders_less_wo_bystanders, #H
-        "column F minus column E": AtoG_less_w_bystanders, #I
-        "column G minus column F": correction_w_any_change_in_spacer_less_correction_with_any_AtoG_change, #J
         
-        "correction_without_bystanders_allele1": pct_wo_base1, #K
-        "correction_with_bystanders_allele1": pct_w_base1, #L
-        "correction_with_any_AtoG_change_allele1": pct_A_to_G_allele1, #M
-        "correction_with_any_change_in_protospacer_allele1": correction_protospacer_allele1, #N
-        "column L minus column K": w_bystanders_less_wo_bystanders_allele1, #O
-        "column M minus column L": AtoG_less_w_bystanders_allele1, #P
-        "column N minus column M": correction_w_any_change_in_spacer_less_correction_with_any_AtoG_change_allele1, #Q
-
-        "correction_without_bystanders_allele2": pct_wo_base2, #R
-        "correction_with_bystanders_allele2": pct_w_base2, #S
-        "correction_with_any_AtoG_change_allele2": pct_A_to_G_allele2, #T
-        "correction_with_any_change_in_protospacer_allele2": correction_protospacer_allele2, #U
-        "column S minus column R": w_bystanders_less_wo_bystanders_allele2, #V
-        "column T minus column S": AtoG_less_w_bystanders_allele2, #W
-        "column U minus column T": correction_w_any_change_in_spacer_less_correction_with_any_AtoG_change_allele2, #X
-        
-        "het_position": het_pos_display, #Y
-        "het_alleles": f"{base1}/{base2}" if het_pos_display != "NA" else "NA", #Z
-        "target_locus":guide_seq, #AA
-        "perfect_correction":search_strings[0], #AB
-        "corrected_locus_with_bystanders": ";".join(search_strings) #AC
-        }
-    """
     return result

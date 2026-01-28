@@ -182,15 +182,63 @@ If a user intends to produce analysis containing intended and tolerated edit pos
 | A | Sample | Fastq directory identifier |
 | B | Reads aligned | Number of sequencing reads that align with associated amplicon |
 | C | Reads total | Total number of sequencing reads in the fastq files |
-| D | Correction with bystanders | Percentage of reads where correction exists at intended position, allowing for intended bystanders |
-| E | Correction without bystanders | Percentage of reads where correction exists at intended position, with no other edits |
-| F | Independent correction | Percentage of reads where an A is edited to a G anywhere within the protospacer |
-| G | Independent correction MINUS correction with bystanders | |
-| H | Correction with bystanders MINUS correction without bystanders | Percentage of reads with tolerated bystander edits |
-| I | Target locus | Guide sequence used for a given sample |
-| J | Perfect correction | Ideal edited sequence with only the intended correction |
-| K | Corrected locus with bystander | All edited sequences searched |
+| D | Correction without bystanders | Percentage of reads where correction exists at intended position, with no other edits |
+| E | Correction with bystanders | Percentage of reads where correction exists at intended position, allowing for tolerated bystanders |
+| F | Correction with any A to G change | Percentage of reads where the correction exists at the intended edit, allowing for intended bystanders, as well as any A to G changes along the protospacer |
+| G | Correction with any change in protospacer | Percentage of reads where the correction exists at intended position, independent of any other changes within the protospacer |
+| H | Column E minus column D | Correction with bystanders MINUS correction without bystanders |
+| I | Column F minus column E | Correction with any A to G change MINUS correction with bystanders |
+| J | Column G minus column F | Correction with any change in protospacer MINUS correction with any A to G change |
+| K | Target locus | Guide sequence used for a given sample |
+| L | Perfect correction | Ideal edited sequence with only the intended correction |
+| M | Corrected locus with bystander | All edited sequences searched |
+
 
 If a user's amplicon table contains both ONEseq and non-ONEseq analysis then two distinct tables will be produced.
+
+
+### Heterozygous output
+The quantification script also produces additional information if a heterozygous case is detected. The heterozygous detection works as such:
+1) The script enteres the Quantification_window_nucleotide_percentage_table.txt for the current CRISPResso output.
+2) Looking through nucleotide percentage, the script identifies any cases where the nucleotide split is between 40% and 60%.
+3) The script verifies the nucleotide split identified is neither an A/G split nor a C/T split, to prevent using the intended edit location as a heterozygous anchor.
+4) The remaining quantification loop splits the allele frequency tables based on their nucleotide at the heterozygous anchor location.
+
+The information displayed in a heterozygous case will be in the following format:
+| Column | Header | Description |
+|--------|--------|-------------|
+| A | Sample | Fastq directory identifier |
+| B | Reads aligned | Number of sequencing reads that align with associated amplicon |
+| C | Reads total | Total number of sequencing reads in the fastq files |
+| D | Correction without bystanders | Percentage of reads where correction exists at intended position, with no other edits |
+| E | Correction with bystanders | Percentage of reads where correction exists at intended position, allowing for tolerated bystanders |
+| F | Correction with any A to G change | Percentage of reads where the correction exists at the intended edit, allowing for intended bystanders, as well as any A to G changes along the protospacer |
+| G | Correction with any change in protospacer | Percentage of reads where the correction exists at intended position, independent of any other changes within the protospacer |
+| H | Column E minus column D | Correction with bystanders MINUS correction without bystanders |
+| I | Column F minus column E | Correction with any A to G change MINUS correction with bystanders |
+| J | Column G minus column F | Correction with any change in protospacer MINUS correction with any A to G change |
+| K | Correction without bystanders allele 1 | Percentage of reads where correction exists at intended position, with no other edit, as a portion of all reads from allele 1
+| L | Correction with bystanders allele 1 | Percentage of reads where correction exists at intended position, allowing for tolerated bystanders, as a portion of all reads from allele 1
+| M | Correction with any A to G change allele 1 | Percentage of reads where correction exists at intended position, allowing for intended bystanders, as well as any A to G changes along the protospacer, as a portion of all reads from allele 1 
+| N | Correction with any change in protospacer allele 1 | Percentage of reads where the correction exists at intended position, independent of any other changes within the protospacer, as a portion of reads from allele 1
+| O | Column L minus column K | Correction with bystanders MINUS correction without bystanders, for allele 1 reads
+| P | Column M minus column L | Correctiom with any A to G change MINUS correction with bystanders, for allele 1 reads
+| Q | Column N minus column M | Correction with any changes in protospacer MINUS correction with any A to G changes, for allele 1 reads
+| R | Correction without bystanders allele 2 | Percentage of reads where correction exists at intended position, with no other edit, as a portion of all reads from allele 2
+| S | Correction with bystanders allele 2 | Percentage of reads where correction exists at intended position, allowing for tolerated bystanders, as a portion of all reads from allele 2
+| T | Correction with any A to G change allele 2 | Percentage of reads where correction exists at intended position, allowing for intended bystanders, as well as any A to G changes along the protospacer, as a portion of all reads from allele 2
+| U | Correction with any change in protospacer allele 2 | Percentage of reads where the correction exists at intended position, independent of any other changes within the protospacer, as a portion of reads from allele 2
+| V | Column S minus column R | Correction with bystanders MINUS correction without bystanders, for allele 2 reads
+| W | Column T minus column S | Correctiom with any A to G change MINUS correction with bystanders, for allele 2 reads
+| X | Column U minus column T | Correction with any changes in protospacer MINUS correction with any A to G changes, for allele 2 reads
+| Y | Heterozygous position | The location within the protospacer that is used as the anchor position for heterozygous sorting
+| Z | Heteroyzgous alleles | The nucleotide at the heterozygous anchor position for each allele respectivly
+| AA | Reads aligned allele 1 | Total number of reads that contain allele 1's nucleotide at heterozygous anchor position
+| AB | Reads aligned allele 2 | Total number of reads that contain allele 2's nucleotide at heterozygous anchor position
+| AC | Target locus | Guide sequence used for a given sample |
+| AD | Perfect correction | Ideal edited sequence with only the intended correction |
+| AE | Corrected locus with bystander | All edited sequences searched |
+
+In the case of both heterozygous samples and non-heterozygous samples, the quantification summary will be made with all columns A through AE, and non-heterozygous samples will be left empty in columns K through AB. In addition to this information, a CSV will be made within each CRISPResso subdirectory containing all reads that belong to each allele. These files will be titled with this format: AQ_allele_frequency_table_pos{Heterozygous Position}_{Heterozygous Nucleotide}
 
 

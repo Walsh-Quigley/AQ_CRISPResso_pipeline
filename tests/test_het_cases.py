@@ -316,7 +316,7 @@ class TestTotalAtoGHetero:
             tolerated_edits=[]
         )
 
-        corr_allele1, corr_allele2, atog_allele1, atog_allele2 = result
+        corr_allele1, corr_allele2, atog_allele1, atog_allele2, total_reads_base1, total_reads_base2 = result
 
         # Should return percentages (not NA)
         assert corr_allele1 != "NA"

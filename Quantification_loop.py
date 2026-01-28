@@ -12,6 +12,7 @@ from scripts.logging_setup import setup_logging
 from scripts.process_oneseq import process_oneseq
 from scripts.process_ABE_case import process_ABE_case
 from scripts.yes_no import yes_no
+from scripts.generate_prism_csv import generate_prism_csv_het
 
 
 
@@ -181,7 +182,9 @@ def main():
             "column T minus column S",
             "column U minus column T",
             "het_position",
-            "het_alleles"
+            "het_alleles",
+            "reads_aligned_allele1",
+            "reads_aligned_allele2",
         ]
 
         # Check if ANY sample has het data
@@ -225,7 +228,7 @@ def main():
                                             "het_alleles",
                                             "target_locus",
                                             "perfect_correction",
-                                            "corrected_locus_with_bystanders"])
+                                            "corrected_locus_with_bystanders"
         """  
         
         #adding unanalyzed directories to the main results dataframe
@@ -244,17 +247,36 @@ def main():
         df = df.sort_values(by="sample")
 
         # Prompt user to generate Prism formatted CSV
-        """
         if yes_no("Would you like to generate a csv output formatted for prism?"):
             logging.info("="*50)
             logging.info("Performing Prism csv generation")
-            prism_csv_file = os.path.join(os.getcwd(), "prism_formatted_output.csv")   
-            prism_df = generate_prism_csv(df)
-            prism_df.to_csv(prism_csv_file, index=False)
-            logging.info(f"Prism formatted csv saved to: {prism_csv_file}")
+            if 'het_position' in df.columns:
+                het_df = df[df['het_position'].notna()].copy()
+                non_het_df = df[df['het_position'].isna()].copy()
+            else:
+                het_df = pd.DataFrame()
+                non_het_df = df.copy()
+            # Generate het prism output
+            if not het_df.empty:
+                het_allele1_df, het_allele2_df = generate_prism_csv_het(het_df)
+                
+                het_allele1_file = os.path.join(os.getcwd(), "prism_formatted_output_het_allele1.csv")
+                het_allele1_df.to_csv(het_allele1_file, index=False)
+                logging.info(f"Het Allele 1 Prism formatted csv saved to: {het_allele1_file}")
+                
+                het_allele2_file = os.path.join(os.getcwd(), "prism_formatted_output_het_allele2.csv")
+                het_allele2_df.to_csv(het_allele2_file, index=False)
+                logging.info(f"Het Allele 2 Prism formatted csv saved to: {het_allele2_file}")
+            
+            # Generate non-het prism output
+            if not non_het_df.empty:
+                prism_csv_file = os.path.join(os.getcwd(), "prism_formatted_output.csv")
+                prism_df = generate_prism_csv(non_het_df)
+                prism_df.to_csv(prism_csv_file, index=False)
+                logging.info(f"Prism formatted csv saved to: {prism_csv_file}")
         else:
             logging.info("Skipping Prism CSV generation")
-        """
+        
         
         # save to CSV in the current working directory
         out_file = os.path.join(os.getcwd(), "quantification_summary.csv")
