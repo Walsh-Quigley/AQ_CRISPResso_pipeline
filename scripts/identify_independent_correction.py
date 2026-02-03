@@ -33,7 +33,7 @@ def total_A_to_G_hetero(orientation, intended_edit, guide_seq, directory_path, t
     het_pos, base1, base2 = find_het_position(crispresso_subfolder)
     if het_pos is None:
         print(f"No heterozygous position found in {crispresso_subfolder}")
-        return "NA", "NA", "NA", "NA"
+        return "NA", "NA", "NA", "NA", "NA", "NA"
     
     alleles_freqency_table_path = glob.glob(os.path.join(crispresso_subfolder, "Alleles_frequency_table_around_*"))
     #if not alleles_freqency_table_path:
