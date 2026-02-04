@@ -115,7 +115,7 @@ TEST_AMPLICONS = {
         "tolerated_edits": "",
     },
 
-    #case 3, het ABE case, novel/fictional
+    #case 3, het ABE case, novel/fictional sequence
     "TEST_HET": {
         "name": "TEST_HET",
         "guide": "GGGGAGGGGGAGGGGGGGGG",  # A at position 5 (edit target) and position 11
@@ -127,6 +127,19 @@ TEST_AMPLICONS = {
         "intended_edit": "5",
         "tolerated_edits": "",
     },
+
+    #case 4, reverse orientation ABE, novel/fictional sequence
+    "TEST_REVERSE":{
+        "name" : "TEST_REVERSE",
+        "guide": "GCGCAGCGCAGCGCAGCGCA",  # A at positions 5, 10, 15, 20; RC = TGCGCTGCGCTGCGCTGCGC
+        "amplicon": "AGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAG"
+                    "TGCGCTGCGCTGCGCTGCGC"
+                    "CTCTCTCTCTCTCTCTCTCTCTCTCTCTCTCTCTCTCTCTCTCTCTCTCTCT",
+        "orientation": "R",
+        "editor": "ABE",
+        "intended_edit": "5",
+        "tolerated_edits": "10"        
+    }
 }
 
 EXPECTED_RESULTS = {
@@ -161,6 +174,18 @@ EXPECTED_RESULTS = {
         "expected_het_alleles": "A/C",
         "tolerance": 3.0,  # Slightly more lenient for het complexity
     },
+
+    # TEST_REVERSE: Reverse orientation ABE case
+    # Total: 1000 reads
+    "TEST_REVERSE": {
+        "total_reads": 1000,
+        "expected_correction_without_bystanders": 25.0,                  # 250/1000
+        "expected_correction_with_bystanders": 40.0,                     # (250+150)/1000
+        "expected_correction_with_any_AtoG_change": 50.0,                # (250+150+100)/1000
+        "expected_correction_with_any_change_in_protospacer": 60.0,      # (250+150+100+100)/1000
+        "tolerance": 2.0,
+    },
+
 }
 
 def create_pah1_read_variants():
@@ -264,6 +289,46 @@ def create_het_read_variants():
         'allele2_corrected': allele2_corrected,
     }
 
+def create_reverse_read_variants():
+    """
+    Create sequence variants for TEST_REVERSE case.
+
+    Guide (in CSV): GCGCAGCGCAGCGCAGCGCA  — A at positions 5, 10, 15, 20
+    RC guide (in amplicon): TGCGCTGCGCTGCGCTGCGC — T at RC indices 0, 5, 10, 15
+
+    In R orientation edits show up as T→C in the amplicon.
+    Position mapping (original guide pos → RC guide 0-indexed):
+        pos 5  (intended)      → index 15
+        pos 10 (tolerated)     → index 10
+        pos 15 (non-tolerated) → index 5
+    RC index 1 is G — used for the non-T→C change test.
+    """
+    amplicon = TEST_AMPLICONS["TEST_REVERSE"]["amplicon"]
+    guide = TEST_AMPLICONS["TEST_REVERSE"]["guide"]
+    guide_start = find_guide_in_amplicon(amplicon, guide, "R")
+
+    # Positions in amplicon (0-indexed)
+    pos_intended = guide_start + 15     # T→C (intended edit)
+    pos_tolerated = guide_start + 10    # T→C (tolerated bystander)
+    pos_nontol_TtoC = guide_start + 5   # T→C (non-tolerated, tests any_AtoG)
+    pos_other = guide_start + 1         # G→A (non-T→C change, tests any_change)
+
+    return {
+        'uncorrected': amplicon,
+        'corrected_only': apply_edits_to_sequece(
+            amplicon, {pos_intended: 'C'}
+        ),
+        'corrected_plus_tolerated': apply_edits_to_sequece(
+            amplicon, {pos_intended: 'C', pos_tolerated: 'C'}
+        ),
+        'corrected_plus_nontol_TtoC': apply_edits_to_sequece(
+            amplicon, {pos_intended: 'C', pos_nontol_TtoC: 'C'}
+        ),
+        'corrected_plus_other_change': apply_edits_to_sequece(
+            amplicon, {pos_intended: 'C', pos_other: 'A'}
+        ),
+    }
+
 def create_pah1_samples(fastqs_dir):
     """
     Create PAH1 sample directory with synthetic FASTQ
@@ -321,6 +386,27 @@ def create_het_sample(fastqs_dir):
     
     fastq_path = os.path.join(sample_dir, "test_R1.fastq.gz")
     write_fastq_gz(fastq_path, reads_data)
+
+def create_reverse_sample(fastqs_dir):
+    """
+    Create TEST_REVERSE sample directory with synthetic FASTQ.
+    """
+    sample_dir = os.path.join(fastqs_dir, "TestSample_TEST_REVERSE")
+    os.makedirs(sample_dir)
+
+    variants = create_reverse_read_variants()
+
+    reads_data = [
+        (variants['uncorrected'], 400),
+        (variants['corrected_only'], 250),
+        (variants['corrected_plus_tolerated'], 150),
+        (variants['corrected_plus_nontol_TtoC'], 100),
+        (variants['corrected_plus_other_change'], 100),
+    ]
+
+    fastq_path = os.path.join(sample_dir, "test_R1.fastq.gz")
+    write_fastq_gz(fastq_path, reads_data)
+
 
 def write_test_amplicon_csv(filepath):
     """
@@ -387,6 +473,8 @@ def e2e_test_enviroment():
         create_pah1_samples(fastqs_dir)
         create_oneseq_sample(fastqs_dir)
         create_het_sample(fastqs_dir)
+        create_reverse_sample(fastqs_dir)
+
 
         #Yield enviroment info to the test
         yield {
@@ -423,7 +511,7 @@ def test_full_pipeline(e2e_test_enviroment):
     from CRISPResso_Loop import main as crispresso_main
     crispresso_main()
 
-    for sample_name in ["TestSample_PAH1", "TestSample_TEST_ONESEQ", "TestSample_TEST_HET"]:
+    for sample_name in ["TestSample_PAH1", "TestSample_TEST_ONESEQ", "TestSample_TEST_HET", "TestSample_TEST_REVERSE"]:
         sample_path = os.path.join(env['fastqs_dir'], sample_name)
         crispresso_dirs = [d for d in os.listdir(sample_path) if d.startswith("CRISPResso_on_")]
         assert len(crispresso_dirs) > 0, f"No CRISPResso output found for {sample_name}"
@@ -545,5 +633,39 @@ def test_full_pipeline(e2e_test_enviroment):
         "TEST_HET allele2 correction"
     )
     print("[TEST] TEST_HET results verified")
+
+        #STEP 8: Verify REVERSE results
+    reverse_row = df[df['sample'].str.contains('TEST_REVERSE', case=False)]
+
+    assert len(reverse_row) == 1, f"Expected 1 TEST_REVERSE row, found {len(reverse_row)}"
+    reverse = reverse_row.iloc[0]
+    expected_reverse = EXPECTED_RESULTS["TEST_REVERSE"]
+
+    assert_within_tolerance(
+        reverse['correction_without_bystanders'],
+        expected_reverse['expected_correction_without_bystanders'],
+        expected_reverse['tolerance'],
+        "TEST_REVERSE correction_without_bystanders"
+    )
+    assert_within_tolerance(
+        reverse['correction_with_bystanders'],
+        expected_reverse['expected_correction_with_bystanders'],
+        expected_reverse['tolerance'],
+        "TEST_REVERSE correction_with_bystanders"
+    )
+    assert_within_tolerance(
+        reverse['correction_with_any_AtoG_change'],
+        expected_reverse['expected_correction_with_any_AtoG_change'],
+        expected_reverse['tolerance'],
+        "TEST_REVERSE correction_with_any_AtoG_change"
+    )
+    assert_within_tolerance(
+        reverse['correction_with_any_change_in_protospacer'],
+        expected_reverse['expected_correction_with_any_change_in_protospacer'],
+        expected_reverse['tolerance'],
+        "TEST_REVERSE correction_with_any_change_in_protospacer"
+    )
+    print("[TEST] TEST_REVERSE results verified")
+
 
     print("\n[TEST] *** ALL TESTS PASSED *** (Yippe!) ")
