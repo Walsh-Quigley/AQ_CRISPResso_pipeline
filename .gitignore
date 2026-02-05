@@ -16,3 +16,10 @@ logs/
 
 #Amplicon_list
 *amplicon_list*
+
+#skip the CBE case that is being built out
+scripts/process_CBE_case.py
+
+#UI folder (in development)
+ui/
+run_ui.py

@@ -23,12 +23,13 @@ def generate_prism_csv(df):
         logging.warning("No samples available for Prism analysis after filtering")
         return pd.DataFrame(columns=["base_sample", "status"])
     
-    # Extract replicate number
-    df_to_process["rep"] = df_to_process["sample"].str.extract(r'[-_](\d+)$')
+    # This will make it so just about any illunima suffix will be taken off
+    df_to_process["sample_stripped"] = df_to_process["sample"].str.replace(r'(_S\d+)?_L\d+(_R\d+)?(_\d+)?$', '', regex=True)
+    df_to_process["rep"] = df_to_process["sample_stripped"].str.extract(r'[-_](\d+)$')
     df_to_process["rep"] = df_to_process["rep"].fillna("1")
 
-    # Extract base sample name (remove the trailing _#)
-    df_to_process["base_sample"] = df_to_process["sample"].str.replace(r'[-_](\d+)$', '', regex=True)
+    # Extract base sample name (remove the trailing replicate number from stripped name)
+    df_to_process["base_sample"] = df_to_process["sample_stripped"].str.replace(r'[-_](\d+)$', '', regex=True)
 
     # Debug logging
     logging.info("Sample name extraction:")
