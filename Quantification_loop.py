@@ -12,6 +12,7 @@ from scripts.logging_setup import setup_logging
 from scripts.process_oneseq import process_oneseq
 from scripts.process_ABE_case import process_ABE_case
 from scripts.yes_no import yes_no
+from scripts.generate_prism_csv import generate_prism_csv_het
 
 
 
@@ -147,17 +148,88 @@ def main():
 
     #Saving non ONE-seq results if any
     if results:
+        # Define base columns (always included)
+        base_columns = [
+            "sample",
+            "reads_aligned",
+            "reads_total",
+            "correction_without_bystanders",
+            "correction_with_bystanders",
+            "correction_with_any_AtoG_change",
+            "correction_with_any_change_in_protospacer",
+            "column E minus column D",
+            "column F minus column E",
+            "column G minus column F",
+            "target_locus",
+            "perfect_correction",
+            "corrected_locus_with_bystanders"
+        ]
+
+        # Define het columns (only included if any sample has het)
+        het_columns = [
+            "correction_without_bystanders_allele1",
+            "correction_with_bystanders_allele1",
+            "correction_with_any_AtoG_change_allele1",
+            "correction_with_any_change_in_protospacer_allele1",
+            "column L minus column K",
+            "column M minus column L",
+            "column N minus column M",
+            "correction_without_bystanders_allele2",
+            "correction_with_bystanders_allele2",
+            "correction_with_any_AtoG_change_allele2",
+            "correction_with_any_change_in_protospacer_allele2",
+            "column S minus column R",
+            "column T minus column S",
+            "column U minus column T",
+            "het_position",
+            "het_alleles",
+            "reads_aligned_allele1",
+            "reads_aligned_allele2",
+        ]
+
+        # Check if ANY sample has het data
+        any_het = any("het_position" in r for r in results)
+
+        # Build final column list
+        if any_het:
+            columns = base_columns[:10] + het_columns + base_columns[10:]
+        else:
+            columns = base_columns
+
+        df = pd.DataFrame(results, columns=columns)
+  
+        """
+    if results:
         df = pd.DataFrame(results, columns=["sample",
                                             "reads_aligned",
                                             "reads_total",
-                                            "correction_with_bystanders",
                                             "correction_without_bystanders",
-                                            "independent_correction",
-                                            "indep_less_w_bystanders",
-                                            "w_bystanders_less_wo_bystanders",
+                                            "correction_with_bystanders",
+                                            "correction_with_any_AtoG_change",
+                                            "correction_with_any_change_in_protospacer",
+                                            "column E minus column D",
+                                            "column F minus column E",
+                                            "column G minus column F",
+                                            "correction_without_bystanders_allele1",
+                                            "correction_with_bystanders_allele1",
+                                            "correction_with_any_AtoG_change_allele1",
+                                            "correction_with_any_change_in_protospacer_allele1",
+                                            "column L minus column K",
+                                            "column M minus column L",
+                                            "column N minus column M",
+                                            "correction_without_bystanders_allele2",
+                                            "correction_with_bystanders_allele2",
+                                            "correction_with_any_AtoG_change_allele2",
+                                            "correction_with_any_change_in_protospacer_allele2",
+                                            "column S minus column R",
+                                            "column T minus column S",
+                                            "column U minus column T",
+                                            "het_position",
+                                            "het_alleles",
                                             "target_locus",
                                             "perfect_correction",
-                                            "corrected_locus_with_bystanders"])
+                                            "corrected_locus_with_bystanders"
+        """  
         
         #adding unanalyzed directories to the main results dataframe
         df = add_unanalyzed_directories(
@@ -178,13 +250,33 @@ def main():
         if yes_no("Would you like to generate a csv output formatted for prism?"):
             logging.info("="*50)
             logging.info("Performing Prism csv generation")
-            prism_csv_file = os.path.join(os.getcwd(), "prism_formatted_output.csv")   
-            prism_df = generate_prism_csv(df)
-            prism_df.to_csv(prism_csv_file, index=False)
-            logging.info(f"Prism formatted csv saved to: {prism_csv_file}")
+            if 'het_position' in df.columns:
+                het_df = df[df['het_position'].notna()].copy()
+                non_het_df = df[df['het_position'].isna()].copy()
+            else:
+                het_df = pd.DataFrame()
+                non_het_df = df.copy()
+            # Generate het prism output
+            if not het_df.empty:
+                het_allele1_df, het_allele2_df = generate_prism_csv_het(het_df)
+                
+                het_allele1_file = os.path.join(os.getcwd(), "prism_formatted_output_het_allele1.csv")
+                het_allele1_df.to_csv(het_allele1_file, index=False)
+                logging.info(f"Het Allele 1 Prism formatted csv saved to: {het_allele1_file}")
+                
+                het_allele2_file = os.path.join(os.getcwd(), "prism_formatted_output_het_allele2.csv")
+                het_allele2_df.to_csv(het_allele2_file, index=False)
+                logging.info(f"Het Allele 2 Prism formatted csv saved to: {het_allele2_file}")
+            
+            # Generate non-het prism output
+            if not non_het_df.empty:
+                prism_csv_file = os.path.join(os.getcwd(), "prism_formatted_output.csv")
+                prism_df = generate_prism_csv(non_het_df)
+                prism_df.to_csv(prism_csv_file, index=False)
+                logging.info(f"Prism formatted csv saved to: {prism_csv_file}")
         else:
             logging.info("Skipping Prism CSV generation")
-
+        
         
         # save to CSV in the current working directory
         out_file = os.path.join(os.getcwd(), "quantification_summary.csv")

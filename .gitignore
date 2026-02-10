@@ -1,0 +1,13 @@
+# Ignore everything
+*
+
+# Except these
+!.gitignore
+!CRISPResso_Loop.py
+!Quantification_loop.py
+!README.md
+!scripts/
+!scripts/**
+scripts/__pycache__/
+scripts/process_CBE_case.py
+!amplicon_list.csv
