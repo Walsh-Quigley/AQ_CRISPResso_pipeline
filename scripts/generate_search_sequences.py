@@ -42,26 +42,32 @@ def generate_search_sequences(guide_seq, orientation, editor, intended_edit, tol
     if orientation not in ["F", "R"]:
         print("\033[4mERROR:\033[0m Orientation must be 'F' for forward or 'R' for reverse.")
         return
-    
+
+    guide_seq = guide_seq.upper()
+
     if orientation == "R":
         edit = "T"
         point_correction = "C"
-        guide_seq = reverse_complement(guide_seq)
-        intended_edit = len(guide_seq) - intended_edit + 1
-        tolerated_edits = [len(guide_seq) - i + 1 for i in tolerated_edits]
-
-    if orientation == "F":
+    elif orientation == "F":
         edit = "A"
         point_correction = "G"
 
+    # Validate positions against the original guide before any transformation
     if not guide_seq[intended_edit-1] == edit:
-        print("\033[4mERROR:\033[0m CorrectionLocationIndex is empty, not a valid integer, or not in the range 0 to 19. i.e. position 1 to 20")
+        print(f"\033[4mERROR:\033[0m Position {intended_edit} in the guide is '{guide_seq[intended_edit-1]}', expected '{edit}'. Check your intended_edit index.")
 
     for i in tolerated_edits:
         if not guide_seq[i-1] == edit:
-            print(f"\033[4mERROR:\033[0m One of the ToleratedEditIndices is not an {edit}, not a valid integer, empty or not in the range 0 to 19. i.e. position 1 to 20")
+            print(f"\033[4mERROR:\033[0m Tolerated edit position {i} in the guide is '{guide_seq[i-1]}', expected '{edit}'. Check your tolerated_edits.")
             return
 
+    # Transform for R orientation after validation
+    if orientation == "R":
+        guide_seq = reverse_complement(guide_seq)
+        intended_edit = len(guide_seq) - intended_edit + 1
+        tolerated_edits = [len(guide_seq) - i + 1 for i in tolerated_edits]
+        edit = "A"
+        point_correction = "G"
 
     corrected_sequence = guide_seq[:intended_edit-1] + point_correction + guide_seq[intended_edit:]
 
@@ -75,6 +81,11 @@ def generate_search_sequences(guide_seq, orientation, editor, intended_edit, tol
     tolerated_sequences = generate_tolerated_sequences(edit, point_correction, corrected_sequence, guide_seq, tolerated_edits)
 
     search_strings = [corrected_sequence] + tolerated_sequences
+
+    # For R orientation, search strings are in RC space but the allele table
+    # has sense-strand sequences — RC them back before searching
+    if orientation == "R":
+        search_strings = [reverse_complement(s) for s in search_strings]
 
     print(f"Search sequences generated: {search_strings}")
 

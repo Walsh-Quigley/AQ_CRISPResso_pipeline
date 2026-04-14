@@ -10,15 +10,13 @@ from .filter_alleles_file import find_het_position
 
 def total_A_to_G_hetero(orientation, intended_edit, guide_seq, directory_path, tolerated_edits):
     #log_file = setup_logging()
-    
+    guide_seq = guide_seq.upper()
     if orientation == "F":
         target_base = "G"
         original_base = "A"
     elif orientation == "R":
-        intended_edit = len(guide_seq) - intended_edit + 1
         target_base = "C"
         original_base = "T"
-        guide_seq = reverse_complement(guide_seq)
     
     crispr_dirs = []
     for d in glob.glob(os.path.join(directory_path, "CRISPResso_on_*")):
@@ -104,15 +102,13 @@ def total_A_to_G_hetero(orientation, intended_edit, guide_seq, directory_path, t
 
 def total_A_to_G(orientation, intended_edit, guide_seq, directory_path, tolerated_edits):
     #log_file = setup_logging()
-    
+    guide_seq = guide_seq.upper()
     if orientation == "F":
         target_base = "G"
         original_base = "A"
     elif orientation == "R":
-        intended_edit = len(guide_seq) - intended_edit + 1
         target_base = "C"
         original_base = "T"
-        guide_seq = reverse_complement(guide_seq)
     
     crispr_dirs = []
     for d in glob.glob(os.path.join(directory_path, "CRISPResso_on_*")):

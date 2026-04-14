@@ -4,22 +4,27 @@
 # Python cache
 __pycache__/
 *.pyc
+*.pyo
 
-# Optional: other temporary files
+# Log files
 *.log
-
-#fastq files
-fastqs/
-
-#Log files
 logs/
 
-#Amplicon_list
+# FASTQ data
+fastqs/
+
+# Amplicon list (contains experiment-specific data)
 *amplicon_list*
 
-#skip the CBE case that is being built out
-scripts/process_CBE_case.py
+# Archive and old material
+archive/
 
-#UI folder (in development)
+# Old tests (root level)
+tests/
+
+# UI folder (in development)
 ui/
 run_ui.py
+
+# CBE stub
+scripts/process_CBE_case.py
