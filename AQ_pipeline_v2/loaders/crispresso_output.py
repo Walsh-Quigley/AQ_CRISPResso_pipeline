@@ -1,0 +1,1 @@
+# Reads CRISPResso ouput files: allele frequency tables, mapping statistics

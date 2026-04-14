@@ -1,0 +1,1 @@
+#stage 1 -> finds FASTQs, matches each to an amplicon config, runs CRISPResso
