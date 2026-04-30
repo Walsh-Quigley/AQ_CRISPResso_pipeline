@@ -1,6 +1,7 @@
 import pytest
 from loaders.amplicon_list import load_amplicon_list
 from config import AmpliconConfig
+from loaders.crispresso_output import read_allele_table, read_mapping_stats
 
 #Tests for reading amplicon_list.csv
 
@@ -57,3 +58,62 @@ def test_parse_invalid_intended_edit(tmp_path):
     )
     with pytest.raises(ValueError):
         load_amplicon_list(csv_file)
+
+def test_read_mapping_stats(tmp_path):
+    stats_file = tmp_path / "CRISPResso_mapping_statistics.txt"
+    stats_file.write_text(
+        "READS IN INPUTS\tREADS AFTER PREPROCESSING\tREADS ALIGNED\tN_COMPUTED_ALN\tN_CACHED_ALN\tN_COMPUTED_NOTALN\tN_CACHED_NOTALN\n"
+        "61046\t51046\t24357\t1861\t22496\t7338\t19351\n"
+    )
+    result = read_mapping_stats(stats_file)
+    assert result[0] == 51046
+    assert result[1] == 24357 
+
+def test_read_mapping_stats_file_not_found(tmp_path):
+    with pytest.raises(FileNotFoundError):
+        read_mapping_stats(tmp_path / "nonexistent.txt")
+
+def test_read_mapping_stats_zero_total_reads(tmp_path):
+    stats_file = tmp_path / "CRISPResso_mapping_statistics.txt"
+    stats_file.write_text(
+        "READS IN INPUTS\tREADS AFTER PREPROCESSING\tREADS ALIGNED\tN_COMPUTED_ALN\tN_CACHED_ALN\tN_COMPUTED_NOTALN\tN_CACHED_NOTALN\n"
+        "0\t0\t24357\t1861\t22496\t7338\t19351\n"
+    )
+    with pytest.raises(ValueError):
+        read_mapping_stats(stats_file)
+
+def test_read_mapping_stats_greater_aligned_than_total(tmp_path):
+    stats_file = tmp_path / "CRISPResso_mapping_statistics.txt"
+    stats_file.write_text(
+        "READS IN INPUTS\tREADS AFTER PREPROCESSING\tREADS ALIGNED\tN_COMPUTED_ALN\tN_CACHED_ALN\tN_COMPUTED_NOTALN\tN_CACHED_NOTALN\n"
+        "10\t10\t24357\t1861\t22496\t7338\t19351\n"
+    )
+    with pytest.raises(ValueError):
+        read_mapping_stats(stats_file)
+
+def test_read_allele_table(tmp_path):
+    allele_file = tmp_path / "Alleles_frequency_table_around.txt"
+    allele_file.write_text(
+        "Aligned_Sequence\tReference_Sequence\tUnedited\tn_deleted\tn_inserted\tn_mutated\t#Reads\t%Reads\n"
+        "AAGCGAACGT\tAATCGAACGT\tFalse\t0\t0\t1\t11185\t45.92\n"
+        "AATCGAACGT\tAATCGAACGT\tTrue\t0\t0\t0\t10150\t41.67\n"
+    )
+    result = read_allele_table(allele_file)
+    assert len(result) == 2
+    assert list(result.columns) == ["Aligned_Sequence","Reference_Sequence","Unedited","n_deleted","n_inserted","n_mutated","#Reads","%Reads"] 
+    assert result["#Reads"][0] == 11185
+
+def test_read_allele_table_file_not_found(tmp_path):
+    with pytest.raises(FileNotFoundError):
+        read_allele_table(tmp_path / "nonexistent.txt")
+
+def test_read_allele_table_empty(tmp_path):
+    allele_file = tmp_path / "Alleles_frequency_table_around.txt"
+    allele_file.write_text(
+        "Aligned_Sequence\tReference_Sequence\tUnedited\tn_deleted\tn_inserted\tn_mutated\t#Reads\t%Reads\n"
+    )
+    result = read_allele_table(allele_file)
+    assert len(result) == 0
+
+
+

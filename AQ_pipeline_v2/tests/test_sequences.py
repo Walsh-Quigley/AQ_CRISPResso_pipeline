@@ -25,45 +25,45 @@ def test_reverse_complement_invalid_base():
 
 def test_generate_search_sequences_no_bystanders():
     result = generate_search_sequences(
-        protospacer="AAtCGAACGT",
-        intended_edit=3,
+        protospacer="aACGAACGAA",
+        intended_edit=1,
         tolerated_edits=[],
         orientation="F",
     )
-    assert result == ["AAGCGAACGT"]
+    assert result == ["GACGAACGAA"]
 
 def test_generate_search_sequences_no_bystander_reverse():
     result = generate_search_sequences(
-        protospacer="AAtCGAACGT",
-        intended_edit=3,
+        protospacer="aTTCGGTCG",
+        intended_edit=1,
         tolerated_edits=[],
         orientation="R",
     )
-    assert result == ["ACGTTCGCTT"]
+    assert result == ["CGACCGAAC"]
 
 def test_generate_search_sequences_one_bystander():
     # position 3 (t) is intended edit, position 7 (a) is the tolerated bystander
     result = generate_search_sequences(
-        protospacer="AAtCGAaCGT",
-        intended_edit=3,
-        tolerated_edits=[7],
+        protospacer="aATACGGAaCGT",
+        intended_edit=1,
+        tolerated_edits=[9],
         orientation="F",
     )
-    assert result == ["AAGCGAACGT", "AAGCGAGCGT"]
+    assert result == ["GATACGGAACGT", "GATACGGAGCGT"]
 
 def test_generate_search_sequences_two_bystanders():
     # pos 3 intended, pos 1 and pos 7 tolerated
     result = generate_search_sequences(
-        protospacer="AAtCGAaCGT",
+        protospacer="aTaCGAaCGT",
         intended_edit=3,
         tolerated_edits=[1, 7],
         orientation="F",
     )
     assert result == [
-        "AAGCGAACGT",   # intended only
-        "GAGCGAACGT",   # intended + pos 1
-        "AAGCGAGCGT",   # intended + pos 7
-        "GAGCGAGCGT",   # intended + pos 1 + pos 7
+        "ATGCGAACGT",   # intended only
+        "GTGCGAACGT",   # intended + pos 1
+        "ATGCGAGCGT",   # intended + pos 7
+        "GTGCGAGCGT",   # intended + pos 1 + pos 7
     ]
 
 def test_generate_search_sequences_edit_at_position_1():
@@ -77,7 +77,7 @@ def test_generate_search_sequences_edit_at_position_1():
 
 def test_generate_search_sequences_edit_at_last_position():
     result = generate_search_sequences(
-        protospacer="AATCGAACGT",
+        protospacer="AATCGAACGA",
         intended_edit=10,
         tolerated_edits=[],
         orientation="F",
@@ -87,7 +87,7 @@ def test_generate_search_sequences_edit_at_last_position():
 def test_generate_search_sequences_one_bystander_reverse():
     # same input as one_bystander test but orientation R
     result = generate_search_sequences(
-        protospacer="AAtCGAaCGT",
+        protospacer="AAaCGAaCGT",
         intended_edit=3,
         tolerated_edits=[7],
         orientation="R",
@@ -97,7 +97,7 @@ def test_generate_search_sequences_one_bystander_reverse():
 def test_generate_search_sequences_two_bystanders_reverse():
     # pos 3 intended, pos 1 and 7 tolerated, reverse orientation
     result = generate_search_sequences(
-        protospacer="AAtCGAaCGT",
+        protospacer="aAaCGAaCGT",
         intended_edit=3,
         tolerated_edits=[1, 7],
         orientation="R",
@@ -125,4 +125,40 @@ def test_generate_search_sequences_position_out_of_range():
             intended_edit=99,
             tolerated_edits=[],
             orientation="F",
+        )
+
+def test_generate_search_sequences_wrong_intended_base_forward():
+    with pytest.raises(ValueError):
+        generate_search_sequences(
+            protospacer="GGGGAGGGGGGGGGGGGGGG",
+            intended_edit=2,
+            tolerated_edits=[],
+            orientation="F"
+        )
+
+def test_generate_search_sequences_wrong_intended_base_reverse():
+    with pytest.raises(ValueError):
+        generate_search_sequences(
+            protospacer="GGGGAGGGGGGGGGGGGGGG",
+            intended_edit=2,
+            tolerated_edits=[],
+            orientation="R"
+        )
+
+def test_generate_search_sequences_wrong_tolerated_base_forward():
+    with pytest.raises(ValueError):
+        generate_search_sequences(
+            protospacer="GGGGAGGGGGGGGGGGGGGG",
+            intended_edit=5,
+            tolerated_edits=[7, 8, 9],
+            orientation="F"
+        )
+
+def test_generate_search_sequences_wrong_tolerated_base_reverse():
+    with pytest.raises(ValueError):
+        generate_search_sequences(
+            protospacer="GGGGAGGGGGGGGGGGGGGG",
+            intended_edit=5,
+            tolerated_edits=[8, 9, 10],
+            orientation="R"
         )

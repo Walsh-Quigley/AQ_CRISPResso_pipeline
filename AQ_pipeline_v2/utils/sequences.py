@@ -26,14 +26,29 @@ def generate_search_sequences(
     
     if orientation not in ("F", "R"):
         raise ValueError(f"orientation must be 'F' or 'R', got '{orientation}'")
-    base = list(protospacer.upper())
+    bases = list(protospacer.upper())
+
+    target_base = "A"
+
+    if bases[intended_edit - 1] != target_base:
+        raise ValueError(
+            f"Expected '{target_base}' at position {intended_edit} but found '{bases[intended_edit - 1]}'. "
+            f"Check intended_edit in amplicon_list.csv."
+        )
+    for pos in tolerated_edits:
+        if bases[pos - 1] != target_base:
+            raise ValueError(
+                f"Expected '{target_base}' at tolerated edit position {pos} but found '{bases[pos - 1]}'. "
+                f"Check tolerated_edits in amplicon_list.csv."
+            )
+
         
-    base[intended_edit - 1] = "G"
+    bases[intended_edit - 1] = "G"
 
     sequences = []
     for size in range(len(tolerated_edits) + 1):
         for combo in combinations(tolerated_edits, size):
-            current = base.copy()
+            current = bases.copy()
             for pos in combo:
                 current[pos - 1] = "G"
             sequences.append("".join(current))
