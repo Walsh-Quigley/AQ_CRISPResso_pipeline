@@ -1,5 +1,5 @@
 import pytest
-from loaders.amplicon_list import load_amplicon_list
+from loaders.amplicon_list import load_amplicon_list, find_amplicon_list
 from config import AmpliconConfig
 from loaders.crispresso_output import read_allele_table, read_mapping_stats
 
@@ -32,14 +32,41 @@ def test_parse_multiple_rows(tmp_path):
     assert result[1].name == "G542X"
     assert result[1].intended_edit == 5
 
-def test_parse_multiple_tolerated_edits(tmp_path):
+def test_parse_multiple_tolerated_edits_spaces(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
-        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,TAGAGCAACAGT,note,\"4,7,15\",8\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,TAGAGCAACAGT,note,4 7 15,8\n"
     )
     result = load_amplicon_list(csv_file)
     assert result[0].tolerated_edits == [4, 7, 15]
+
+def test_parse_multiple_tolerated_edits_commas(tmp_path):
+    csv_file = tmp_path / "amplicon_list.csv"
+    csv_file.write_text(
+        "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,TAGAGCAACAGT,note,\"4, 7, 15\",8\n"
+    )
+    result = load_amplicon_list(csv_file)
+    assert result[0].tolerated_edits == [4, 7, 15]
+
+def test_parse_multiple_tolerated_edits_mix(tmp_path):
+    csv_file = tmp_path / "amplicon_list.csv"
+    csv_file.write_text(
+        "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,TAGAGCAACAGT,note,\"4, 7 15\",8\n"
+    )
+    result = load_amplicon_list(csv_file)
+    assert result[0].tolerated_edits == [4, 7, 15]
+
+def test_parse_multiple_tolerated_edits_misentered_FORCED_FAIL(tmp_path):
+    csv_file = tmp_path / "amplicon_list.csv"
+    csv_file.write_text(
+        "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,TAGAGCAACAGT,note,4, 7, 15,8\n"
+    )
+    with pytest.raises(ValueError):
+        result = load_amplicon_list(csv_file)
 
 def test_parse_empty_tolerated_edits(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
@@ -50,7 +77,7 @@ def test_parse_empty_tolerated_edits(tmp_path):
     result = load_amplicon_list(csv_file)
     assert result[0].tolerated_edits == []
 
-def test_parse_invalid_intended_edit(tmp_path):
+def test_parse_invalid_intended_edit_FORCED_FAIL(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
@@ -69,11 +96,11 @@ def test_read_mapping_stats(tmp_path):
     assert result[0] == 51046
     assert result[1] == 24357 
 
-def test_read_mapping_stats_file_not_found(tmp_path):
+def test_read_mapping_stats_file_not_found_FORCED_FAIL(tmp_path):
     with pytest.raises(FileNotFoundError):
         read_mapping_stats(tmp_path / "nonexistent.txt")
 
-def test_read_mapping_stats_zero_total_reads(tmp_path):
+def test_read_mapping_stats_zero_total_reads_FORCED_FAIL(tmp_path):
     stats_file = tmp_path / "CRISPResso_mapping_statistics.txt"
     stats_file.write_text(
         "READS IN INPUTS\tREADS AFTER PREPROCESSING\tREADS ALIGNED\tN_COMPUTED_ALN\tN_CACHED_ALN\tN_COMPUTED_NOTALN\tN_CACHED_NOTALN\n"
@@ -82,7 +109,7 @@ def test_read_mapping_stats_zero_total_reads(tmp_path):
     with pytest.raises(ValueError):
         read_mapping_stats(stats_file)
 
-def test_read_mapping_stats_greater_aligned_than_total(tmp_path):
+def test_read_mapping_stats_greater_aligned_than_total_FORCED_FAIL(tmp_path):
     stats_file = tmp_path / "CRISPResso_mapping_statistics.txt"
     stats_file.write_text(
         "READS IN INPUTS\tREADS AFTER PREPROCESSING\tREADS ALIGNED\tN_COMPUTED_ALN\tN_CACHED_ALN\tN_COMPUTED_NOTALN\tN_CACHED_NOTALN\n"
@@ -103,7 +130,7 @@ def test_read_allele_table(tmp_path):
     assert list(result.columns) == ["Aligned_Sequence","Reference_Sequence","Unedited","n_deleted","n_inserted","n_mutated","#Reads","%Reads"] 
     assert result["#Reads"][0] == 11185
 
-def test_read_allele_table_file_not_found(tmp_path):
+def test_read_allele_table_file_not_found_FORCED_FAIL(tmp_path):
     with pytest.raises(FileNotFoundError):
         read_allele_table(tmp_path / "nonexistent.txt")
 
@@ -115,5 +142,21 @@ def test_read_allele_table_empty(tmp_path):
     result = read_allele_table(allele_file)
     assert len(result) == 0
 
+def test_find_amplicon_list_one_file_FORCED_FAIL(tmp_path):
+    amplicon_list_path = tmp_path / "common_amplicon_list.csv"
+    amplicon_list_path.touch()
+    result = find_amplicon_list(tmp_path)
+    assert result == amplicon_list_path
 
+def test_find_amplicon_list_no_file(tmp_path):
+    amplicon_list_path = tmp_path / "common_amplicon_list.csv"
+    with pytest.raises(FileNotFoundError):
+        find_amplicon_list(tmp_path)
 
+def test_find_amplicon_list_multiple_files_FORCED_FAIL(tmp_path):
+    amplicon_list_path = tmp_path / "common_amplicon_list1.csv"
+    amplicon_list_path.touch()
+    amplicon_list_path = tmp_path / "common_amplicon_list2.csv"
+    amplicon_list_path.touch()
+    with pytest.raises(ValueError):
+        find_amplicon_list(tmp_path)

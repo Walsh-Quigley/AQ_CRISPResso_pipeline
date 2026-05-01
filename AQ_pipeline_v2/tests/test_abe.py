@@ -57,7 +57,7 @@ def test_calcualte_protospacer_metrics_reverse():
     assert any_AtoG == 40.0
     assert any_change == 70.0
 
-def test_protospacer_metrics_invalid_orientation():
+def test_protospacer_metrics_invalid_orientation_FORCED_FAIL():
     with pytest.raises(ValueError):
         table = pd.DataFrame({
             "Aligned_Sequence": ["AAAAAAAC",   # intended A→G only → both metrics

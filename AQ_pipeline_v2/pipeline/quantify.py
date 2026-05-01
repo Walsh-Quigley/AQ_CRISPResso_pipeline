@@ -1,5 +1,6 @@
 from pathlib import Path
 from glob import glob
+import re
 from config import AmpliconConfig
 from loaders.crispresso_output import read_mapping_stats, read_allele_table
 from utils.sequences import generate_search_sequences
@@ -11,6 +12,8 @@ from analysis.abe import calculate_correction, calculate_protospacer_metrics
 def quantify_sample(amplicon_row: AmpliconConfig, crispresso_dir: Path) -> dict:
 
     matches = glob(str(crispresso_dir / "CRISPResso_on_*"))
+    if not matches:
+        raise FileNotFoundError(f"No CRISPResso output folder found in {crispresso_dir}")
     crispresso_subfolder = Path(matches[0])
 
     allele_file_matches = glob(str(crispresso_subfolder / "Alleles_frequency_table_around_sgRNA_*.txt"))
@@ -42,16 +45,16 @@ def quantify_sample(amplicon_row: AmpliconConfig, crispresso_dir: Path) -> dict:
     )
 
     return {
-        "sample": crispresso_dir.name, #A
+        "sample": re.sub(r'(_L\d{3})?-ds\..*', '', crispresso_dir.name),
         "reads_total": reads_total, #B
         "reads_aligned": reads_aligned, #C
         "correction_without_bystanders": without_bystanders, #D
         "correction_with_tolerated_bystanders": with_bystanders, #E
         "correction_with_any_AtoG_change": any_AtoG, #F
         "correction_with_any_change_in_protospacer": any_change, #G
-        "column E minus column D": (with_bystanders - without_bystanders),
-        "column F minus column E": (any_AtoG - with_bystanders),
-        "column G minus column F": (any_change - any_AtoG),
+        "column E minus column D": round(with_bystanders - without_bystanders, 2),
+        "column F minus column E": round(any_AtoG - with_bystanders, 2),
+        "column G minus column F": round(any_change - any_AtoG, 2),
         "target_locus":amplicon_row.protospacer,
         "perfect_correction": search_seqs[0],
         "corrected_locus_with_bystanders": ";".join(search_seqs)

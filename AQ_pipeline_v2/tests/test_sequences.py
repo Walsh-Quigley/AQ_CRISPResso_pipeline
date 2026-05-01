@@ -19,7 +19,7 @@ def test_reverse_complement_lowercase():
 def test_reverse_complement_mixed_case():
     assert reverse_complement("AtCg") == "CGAT"
 
-def test_reverse_complement_invalid_base():
+def test_reverse_complement_invalid_base_FORCED_FAIL():
     with pytest.raises(KeyError):
         reverse_complement("ATXG")
 
@@ -109,7 +109,7 @@ def test_generate_search_sequences_two_bystanders_reverse():
         "ACGCTCGCTC",   # intended + pos 1 + pos 7
     ]
 
-def test_generate_search_sequences_invalid_orientation():
+def test_generate_search_sequences_invalid_orientation_FORCED_FAIL():
     with pytest.raises(ValueError):
         generate_search_sequences(
             protospacer="AATCGAACGT",
@@ -118,7 +118,7 @@ def test_generate_search_sequences_invalid_orientation():
             orientation="X",
         )
 
-def test_generate_search_sequences_position_out_of_range():
+def test_generate_search_sequences_position_out_of_range_FORCED_FAIL():
     with pytest.raises(IndexError):
         generate_search_sequences(
             protospacer="AATCGAACGT",
@@ -127,7 +127,7 @@ def test_generate_search_sequences_position_out_of_range():
             orientation="F",
         )
 
-def test_generate_search_sequences_wrong_intended_base_forward():
+def test_generate_search_sequences_wrong_intended_base_forward_FORCED_FAIL():
     with pytest.raises(ValueError):
         generate_search_sequences(
             protospacer="GGGGAGGGGGGGGGGGGGGG",
@@ -136,7 +136,7 @@ def test_generate_search_sequences_wrong_intended_base_forward():
             orientation="F"
         )
 
-def test_generate_search_sequences_wrong_intended_base_reverse():
+def test_generate_search_sequences_wrong_intended_base_reverse_FORCED_FAIL():
     with pytest.raises(ValueError):
         generate_search_sequences(
             protospacer="GGGGAGGGGGGGGGGGGGGG",
@@ -145,7 +145,7 @@ def test_generate_search_sequences_wrong_intended_base_reverse():
             orientation="R"
         )
 
-def test_generate_search_sequences_wrong_tolerated_base_forward():
+def test_generate_search_sequences_wrong_tolerated_base_forward_FORCED_FAIL():
     with pytest.raises(ValueError):
         generate_search_sequences(
             protospacer="GGGGAGGGGGGGGGGGGGGG",
@@ -154,7 +154,7 @@ def test_generate_search_sequences_wrong_tolerated_base_forward():
             orientation="F"
         )
 
-def test_generate_search_sequences_wrong_tolerated_base_reverse():
+def test_generate_search_sequences_wrong_tolerated_base_reverse_FORCED_FAIL():
     with pytest.raises(ValueError):
         generate_search_sequences(
             protospacer="GGGGAGGGGGGGGGGGGGGG",

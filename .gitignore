@@ -14,13 +14,13 @@ logs/
 fastqs/
 
 # Amplicon list (contains experiment-specific data)
-*amplicon_list*
+*amplicon_list*.csv
 
 # Archive and old material
 archive/
 
 # Old tests (root level)
-tests/
+/tests/
 
 # UI folder (in development)
 ui/

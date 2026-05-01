@@ -47,7 +47,7 @@ def run_crispresso(amplicon_list_row: AmpliconConfig, sample_dir: Path) -> None:
         *fastq_cmd_section,
         '--amplicon_seq', amplicon_list_row.amplicon,
         '--guide_seq', amplicon_list_row.protospacer,
-        '--output_folder', '.',
+        '--output_folder', str(sample_dir),
         '--plot_window_size', str((len(amplicon_list_row.protospacer) + 1) // 2),
         '--quantification_window_center', str(-len(amplicon_list_row.protospacer) //2),
         '--quantification_window_size', str((len(amplicon_list_row.protospacer)+1)//2),

@@ -38,6 +38,7 @@ def main():
             error_count += 1
 
     df = pd.DataFrame(results)
+    df = df.sort_values(by="sample")
     df.to_csv("quantification_summary.csv", index=False)
     logging.info(f"Samples processed correctly: {completed_count}")
     logging.info(f"Samples encountered with errors: {error_count}")
