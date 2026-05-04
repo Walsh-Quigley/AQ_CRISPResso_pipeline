@@ -3,6 +3,8 @@ import pytest
 from analysis.abe import calculate_correction, calculate_protospacer_metrics
 
 # Tests for ABE metric calcualtions
+"""Tests for analysis/abe.py - covers perfect and tolerated analysis in the 
+forward and reverse orientation"""
 
 
 def test_perfect_correction():

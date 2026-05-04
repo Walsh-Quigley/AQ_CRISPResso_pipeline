@@ -19,6 +19,9 @@ logging.basicConfig(
 
 
 def main():
+    """Entry point for Stage 1. Iterates over fastq subdirectories, matches each
+    to an AmpliconConfig object, and runs CRISPResso on each sample
+    """
     error_count = 0
     completed_count = 0
     fastqs_dir = Path("fastqs")
@@ -28,8 +31,8 @@ def main():
         if not sample_dir.is_dir():
             continue
         try:
-            config = identify_amplicon(sample_dir.name, amplicon_configs)
             logging.info(f"Processing {sample_dir.name}")
+            config = identify_amplicon(sample_dir.name, amplicon_configs)
             run_crispresso(config, sample_dir)
             logging.info(f"Done: {sample_dir.name}")
             completed_count += 1

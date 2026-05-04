@@ -8,6 +8,16 @@ from config import AmpliconConfig
 # One AmpliconConfig is created per row. Raises ValueError on missing or invalid data
 
 def load_amplicon_list(path: Path) -> list[AmpliconConfig]:
+    """Parses amplicon list file and returns a list of the custom made 
+    AmpliconConfig objects.
+    Args:
+        path: A path to the amplicon_list.csv
+    Returns:
+        list[AmpliconConfig]: a list of AmpliconConfig objects
+    Raises:
+        ValueError: if there are too many columns in the amplicon_list.csv
+        ValueError: if there is a non-digit in the intended_edit column (excluding "ONESEQ")
+    """
     configs = []
 
     with open(path, newline="", encoding="utf-8-sig") as f:
@@ -58,6 +68,15 @@ def load_amplicon_list(path: Path) -> list[AmpliconConfig]:
     return configs
 
 def find_amplicon_list(search_dir: Path = Path(".")) -> Path:
+    """Parse through user's project direcotry for potential amplicon_list.csv
+    Args:
+        search_dir: the directory path to search within, set to the current directory by default
+    Returns:
+        Path: a path to the amplicon_list.csv itself
+    Raises:
+        FileNotFoundError: if no file contianing 'amplicon_list' is found.
+        ValueError: if multiple files containing 'amplicon_list" are found.
+    """
     found_lists = 0
     found_names = []
 

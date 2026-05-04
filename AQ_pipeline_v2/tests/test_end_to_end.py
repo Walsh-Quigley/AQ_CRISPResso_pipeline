@@ -7,6 +7,9 @@ from config import AmpliconConfig
 from loaders.crispresso_output import read_allele_table, read_mapping_stats
 
 # Full pipeline test using sample data
+"""Tests end to end workflow of the pipeline - from load amplicon list to generate search
+sequences, load amplicon list to calcualte correction, load amplicon list to calculate 
+protospacer metric"""
 
 def test_load_amplicon_list_UNTIL_generate_search_sequences(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"

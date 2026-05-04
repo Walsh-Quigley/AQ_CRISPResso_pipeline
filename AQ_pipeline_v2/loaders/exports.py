@@ -4,6 +4,16 @@ import logging
 #Prism input generator function
 
 def generate_prism_csv(df: pd.DataFrame) -> pd.DataFrame:
+    """Translates the Quantification_Summary dataframe into a format that is acceptable by
+    Prism.
+    Args:
+        df: the dataframe that contains the Quantification_Summary's information
+    Returns:
+        pd.DataFrame: a newly formatted dataframe
+    Raises:
+        ValueError: if the sample column is missing from the input DataFrame
+
+    """
     df = df.dropna(how="all")
     if df.empty:
         logging.warning("Passed through DataFrame empty, returning empty output")

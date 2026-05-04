@@ -1,8 +1,11 @@
 import pytest
 from utils.sequences import reverse_complement, generate_search_sequences
 
-#tests/test_sequences.py
-# Tests for reverse complement and search sequence generation
+
+"""Tests for utils/sequences.py - covers reverse complement extensively, generate search
+sequence no bystands, multiple bystander, edit at the first and last position, invalid
+orientation FORCED FAIL, position out of range FORCED FAIL, wrong intended base forced fail,
+wrong tolerated base Force fail"""
 
 def test_reverse_complement_basic():
     assert reverse_complement("ATCG") == "CGAT"

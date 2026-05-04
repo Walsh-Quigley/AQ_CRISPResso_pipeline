@@ -3,7 +3,9 @@ import pandas as pd
 from loaders.exports import generate_prism_csv
 import logging
 
-#Test cases to make sure the prism output file is correct
+"""Tests for loaders/exports - covers generate prism formated output, empty dataframe, 
+only two replicates, no trailing replicate numebr warning, and a missing sample column 
+forced fail"""
 
 def test_generate_prism_csv_happy_path():
     df = pd.DataFrame({

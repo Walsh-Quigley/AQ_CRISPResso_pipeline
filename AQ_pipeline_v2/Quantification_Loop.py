@@ -4,6 +4,7 @@ from pathlib import Path
 from loaders.amplicon_list import load_amplicon_list, find_amplicon_list
 from pipeline.crispresso import identify_amplicon
 from pipeline.quantify import quantify_sample
+from loaders.exports import generate_prism_csv
 
 #Entry point for the Quantification stage of the pipeline
 
@@ -19,6 +20,8 @@ logging.basicConfig(
 )
 
 def main():
+    """Entry point for Stage 2. Iterates over all fastq subdirectories, matches each
+    to an AmpliconConfig object, and performs data analysis on each sample"""
     error_count = 0
     completed_count = 0
     results = []
@@ -28,8 +31,8 @@ def main():
         if not sample_dir.is_dir():
             continue
         try:
-            logging.info(f"Processing {sample_dir.name}")
             config = identify_amplicon(sample_dir.name, amplicon_configs)
+            logging.info(f"Processing {sample_dir.name}")
             results.append(quantify_sample(config, sample_dir))
             logging.info(f"Done: {sample_dir.name}")
             completed_count += 1
@@ -39,7 +42,15 @@ def main():
 
     df = pd.DataFrame(results)
     df = df.sort_values(by="sample")
-    df.to_csv("quantification_summary.csv", index=False)
+    df.to_csv("Quantification_Summary.csv", index=False)
+    while True:
+        make_prism = input("Would you like to generate a prism formated file? (y/n)")
+        if make_prism in ("yes", "no", "y", "n"):
+            break
+        print("Please enter (y/n)")
+    if make_prism == "y" or make_prism == "yes":
+        prism_df = generate_prism_csv(df)
+        prism_df.to_csv("Prism_Summary.csv", index = False)
     logging.info(f"Samples processed correctly: {completed_count}")
     logging.info(f"Samples encountered with errors: {error_count}")
 

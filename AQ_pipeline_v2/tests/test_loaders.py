@@ -4,6 +4,8 @@ from config import AmpliconConfig
 from loaders.crispresso_output import read_allele_table, read_mapping_stats
 
 #Tests for reading amplicon_list.csv
+"""Tests for loaders/amplicon_list.py - covers CSV parsing, tolerated edit formats,
+and amplicon list file discovery."""
 
 def test_parse_single_row(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"

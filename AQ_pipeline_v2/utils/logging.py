@@ -1,1 +1,0 @@
-#Sets up single timestamped log file for the whole run

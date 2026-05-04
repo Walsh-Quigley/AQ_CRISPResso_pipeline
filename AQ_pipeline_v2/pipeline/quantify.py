@@ -10,6 +10,16 @@ from analysis.abe import calculate_correction, calculate_protospacer_metrics
 # assembles final reasult
 
 def quantify_sample(amplicon_row: AmpliconConfig, crispresso_dir: Path) -> dict:
+    """creates a dictionary containing relevent data analysis for a given sample
+    Args:
+        amplicon_row: the AmpliconConfig object associated with a given sample
+        crispresso_dir: the path to the sample direcotry currently being analyzed
+    Returns:
+        dict: a dictionary containing all analysis data for a given sample
+    Raises:
+        FileNotFoundError: No CRISPResso output folder found in the crispresso directory
+        ValueError: Multiple allele_frequency_tables_around_sgRNA_* found
+    """
 
     matches = glob(str(crispresso_dir / "CRISPResso_on_*"))
     if not matches:

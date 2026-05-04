@@ -3,6 +3,9 @@ from pathlib import Path
 from pipeline.quantify import quantify_sample
 from config import AmpliconConfig
 
+"""Tests for pipeline/quantify.py - covers quantify sample, missing CRISPResso_subfolder
+forced fail, and multiple allele frequency tables forced fail"""
+
 
 def test_quantify_sample(tmp_path):
     CRISPResso_mapping_statistic = tmp_path / "sample_dir" / "CRISPResso_on_sample" / "CRISPResso_mapping_statistics.txt" 
@@ -41,7 +44,7 @@ def test_quantify_sample(tmp_path):
     assert result["perfect_correction"] == "TGTATGCCCCCGAACTGTGA"
     assert result["corrected_locus_with_bystanders"] == "TGTATGCCCCCGAACTGTGA;TGTATGCCCCCGAGCTGTGA"
 
-def test_missing_CRISPResso_subfolder_forced_fail(tmp_path):
+def test_missing_CRISPResso_subfolder_FORCED_FAIL(tmp_path):
     configs = [
         AmpliconConfig(name="TEST1", protospacer="TGTATACCCCCGAACTGTGA", editor="ABE", orientation="F", 
                        amplicon="CCTTTTTTTAGATGGCGCTCATTGTGCCTGGCAACTGGTAGCTGGAGGACAGTACTGTATACCCCCGAACTGTGATGGGCTTGGATCCATGTCTGATGTACTGTGTGCAGCAAGACCTCAATCCTTTGGGTGTATGGGTCG", 
@@ -50,7 +53,7 @@ def test_missing_CRISPResso_subfolder_forced_fail(tmp_path):
     with pytest.raises(FileNotFoundError):
         result = quantify_sample(configs[0], tmp_path/"sample_dir")
 
-def test_multiple_allele_frequency_tables_forced_fail(tmp_path):
+def test_multiple_allele_frequency_tables_FORCED_FAIL(tmp_path):
     CRISPResso_mapping_statistic = tmp_path / "sample_dir" / "CRISPResso_on_sample" / "CRISPResso_mapping_statistics.txt" 
     Alleles_frequency_table_around_sgRNA_XXXX = tmp_path / "sample_dir" / "CRISPResso_on_sample" / "Alleles_frequency_table_around_sgRNA_XXXX.txt" 
     Alleles_frequency_table_around_sgRNA_YYYY = tmp_path / "sample_dir" / "CRISPResso_on_sample" / "Alleles_frequency_table_around_sgRNA_YYYY.txt" 

@@ -2,6 +2,9 @@ import pytest
 from pipeline.crispresso import identify_amplicon
 from config import AmpliconConfig
 
+"""Tests for pipeline/crispresso - covers amplicon matching, longest first priority,
+stripping random suffixs, and no matches being found"""
+
 def test_basic_amplicon_match(tmp_path):
     configs = [
         AmpliconConfig(name="PAH1", protospacer="AAAAAAAAAAAAAAAAAAAA", editor="ABE",

@@ -2,15 +2,31 @@ from pathlib import Path
 from config import AmpliconConfig
 from glob import glob
 import subprocess
+import logging
 
 
 #stage 1 -> finds FASTQs, matches each to an amplicon config, runs CRISPResso
 
-def by_name_length(config):
+def by_name_length(config) -> int:
+    """calculates an amplicon's name's length
+    Args:
+        config: an amplicon object
+    Returns:
+        int: length of the name of an amplicon as an integer
+    """
     return len(config.name)
 
 
 def identify_amplicon(directory_name: str, amplicon_configs: list[AmpliconConfig]) -> AmpliconConfig:
+    """matches the correct amplicon to the given sample
+    Args:
+        directory_name: the name of the sample directory
+        amplicon_configs: list of all AmpliconConfig objects from amplicon_list.csv
+    Returns:
+        AmpliconConfig: the amplicon that matches the sample directory
+    Raises:
+        ValueError: no amplicon config object matches the sample directory
+    """
     
     matched_name = None
 
@@ -27,9 +43,21 @@ def identify_amplicon(directory_name: str, amplicon_configs: list[AmpliconConfig
         error_msg = f"No valid amplicon match found for directory: {directory_name}"
         raise ValueError(error_msg)
 
+    logging.info(f"Matched {directory_name} to amplicon {matched_name.name}")
     return matched_name
 
 def run_crispresso(amplicon_list_row: AmpliconConfig, sample_dir: Path) -> None:
+    """Runs the CRISPResso command line function using information from the matched amplicon
+        config file
+    Args:
+        amplicon_list_row: the AmpliconConfig object that was associated with the sample
+        sample_dir: the directory path of the current sample analysis is being run on
+    Returns:
+        None: the purpose of the function is to run the CRISPResso command, no return value
+    Raises:
+        FileNotFoundError: no fastq files found in the sample directory
+        ValueError: more than 2 fastq files found in teh sample directory
+    """
     fastq_files = glob(str(sample_dir / "*.fastq.gz")) + glob(str(sample_dir / "*fastq"))
 
     if not fastq_files:

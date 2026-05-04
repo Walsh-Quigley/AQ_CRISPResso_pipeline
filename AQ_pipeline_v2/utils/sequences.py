@@ -7,10 +7,15 @@ from itertools import combinations
 
 
 
-# takes in a passed through str sequence and 
-# returns the reverse complement of that sequence
-# as a string
 def reverse_complement(seq:str) -> str:
+    """Reverse_complements a given string
+    Args:
+        seq: a sequence of characters in str format
+    Returns:
+        str: the reverse complement of the inputted string
+    Raises:
+        KeyError: if the seq contains a base that is not in our dictionary
+    """
     complement = {"A": "T", 
                   "T" : "A",
                   "C" : "G",
@@ -23,7 +28,22 @@ def generate_search_sequences(
                             tolerated_edits: list[int],
                             orientation: str,
                         ) -> list[str]:
-    
+    """Generate all ABE search sequences based on users tolerated and intended edits
+    Args:
+        protospacer: the user's guide sequence
+        intended_edit: the user's intended_edit location
+        tolerated_edits: the user's tolerated_edit locations
+        orientation: the orientaion of the guide relative to the amplicon
+    Returns:
+        list[str]: a list of search sequences to be used
+    Raises:
+        ValueError: if the orientaion is neither forward nor reversed
+        ValueError: if the intended edit target base is not an A
+        ValueError: if the tolerated edit location is not an A
+    Note: 
+        Currently ABE specific, this will need to be changed when opening up to other editing
+        strategies.
+    """
     if orientation not in ("F", "R"):
         raise ValueError(f"orientation must be 'F' or 'R', got '{orientation}'")
     bases = list(protospacer.upper())
