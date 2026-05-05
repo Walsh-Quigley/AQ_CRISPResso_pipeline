@@ -185,5 +185,5 @@ The output of the quantification section of this pipeline is a comprehensive tab
 | L | perfect_correction | Ideal corrected sequence with only the intended edit |
 | M | corrected_locus_with_bystanders | All corrected sequences searched, separated by semicolons |
 
-### Prism CSV (Prism_Summary.csv)
+### Prism CSV (Prism_Input.csv)
 The Prism CSV pivots the quantification summary into a wide format suitable for direct import into GraphPad Prism. Each row represents a unique base sample, and replicate columns are appended with _rep1, _rep2, _rep3.

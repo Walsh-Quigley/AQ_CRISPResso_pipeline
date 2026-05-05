@@ -14,8 +14,6 @@ graph TD
     pipeline/quantify.py --> read_allele_table
     pipeline/quantify.py --> generate_search_sequences
     pipeline/quantify.py --> analysis/abe.py
-    pipeline/quantify.py --> analysis/heterozygous.py
-    pipeline/quantify.py --> analysis/oneseq.py
     pipeline/quantify.py --> export
 
     load_amplicon_list --> AmpliconConfig
@@ -47,7 +45,7 @@ graph TD
 | `utils/sequences.py` | Done | reverse_complement, generate_search_sequences |
 | `loaders/amplicon_list.py` | Done | Parse amplicon_list.csv into AmpliconConfig objects |
 | `loaders/crispresso_output.py` | Done | Read CRISPResso allele table and mapping stats |
-| `loaders/export.py` | Not started | Write summary CSV and PRISM output |
+| `loaders/export.py` | Done | Write summary CSV and PRISM output |
 | `analysis/abe.py` | Done | ABE correction metric calculations |
 | `analysis/heterozygous.py` | Not started | Het position detection and allele splitting |
 | `analysis/oneseq.py` | Not started | ONE-seq A-to-G analysis |

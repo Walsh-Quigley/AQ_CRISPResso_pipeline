@@ -1,42 +1,20 @@
 from pathlib import Path
 from glob import glob
+import pandas as pd
 import re
 from config import AmpliconConfig
 from loaders.crispresso_output import read_mapping_stats, read_allele_table
-from utils.sequences import generate_search_sequences
+from utils.sequences import generate_search_sequences, generate_oneseq_search_sequences
 from analysis.abe import calculate_correction, calculate_protospacer_metrics
+from analysis.oneseq import calculate_oneseq
 
 # Stage 2 -> parses CRISPResso outputs, calls analysis modules,
 # assembles final reasult
-
-def quantify_sample(amplicon_row: AmpliconConfig, crispresso_dir: Path) -> dict:
-    """creates a dictionary containing relevent data analysis for a given sample
-    Args:
-        amplicon_row: the AmpliconConfig object associated with a given sample
-        crispresso_dir: the path to the sample direcotry currently being analyzed
-    Returns:
-        dict: a dictionary containing all analysis data for a given sample
-    Raises:
-        FileNotFoundError: No CRISPResso output folder found in the crispresso directory
-        ValueError: Multiple allele_frequency_tables_around_sgRNA_* found
-    """
-
-    matches = glob(str(crispresso_dir / "CRISPResso_on_*"))
-    if not matches:
-        raise FileNotFoundError(f"No CRISPResso output folder found in {crispresso_dir}")
-    crispresso_subfolder = Path(matches[0])
-
-    allele_file_matches = glob(str(crispresso_subfolder / "Alleles_frequency_table_around_sgRNA_*.txt"))
-    if len(allele_file_matches) != 1:
-        raise ValueError(f"Expected exactly one allele table in {crispresso_subfolder}, found {len(allele_file_matches)}")
-
-    allele_file = Path(allele_file_matches[0])    
-
-    stats_file = crispresso_subfolder / "CRISPResso_mapping_statistics.txt"
-    
-    reads_total, reads_aligned = read_mapping_stats(stats_file)
-
-    allele_table_df = read_allele_table(allele_file)
+def quantify_abe_sample(amplicon_row: AmpliconConfig, 
+                        sample_name: str,
+                        allele_table_df: pd.DataFrame,
+                        reads_total: int,
+                        reads_aligned: int) -> dict:
 
     search_seqs = generate_search_sequences(
         protospacer=amplicon_row.protospacer,
@@ -55,7 +33,7 @@ def quantify_sample(amplicon_row: AmpliconConfig, crispresso_dir: Path) -> dict:
     )
 
     return {
-        "sample": re.sub(r'(_L\d{3})?-ds\..*', '', crispresso_dir.name),
+        "sample": re.sub(r'(_L\d{3})?-ds\..*', '', sample_name),
         "reads_total": reads_total, #B
         "reads_aligned": reads_aligned, #C
         "correction_without_bystanders": without_bystanders, #D
@@ -69,3 +47,52 @@ def quantify_sample(amplicon_row: AmpliconConfig, crispresso_dir: Path) -> dict:
         "perfect_correction": search_seqs[0],
         "corrected_locus_with_bystanders": ";".join(search_seqs)
     }    
+
+def quantify_oneseq_sample(amplicon_row: AmpliconConfig, 
+                            sample_name: str,
+                            allele_table_df: pd.DataFrame,
+                            reads_total: int,
+                            reads_aligned: int) -> dict:
+    first_10_seqs, full_seqs = generate_oneseq_search_sequences(
+        protospacer=amplicon_row.protospacer,
+        orientation=amplicon_row.orientation
+    )
+
+    first_10_pct, full_sequence_pct = calculate_oneseq(allele_table_df, first_10_seqs, full_seqs)
+    
+    return {
+        "sample": re.sub(r'(_L\d{3})?-ds\..*', '', sample_name),
+        "reads_total": reads_total,
+        "reads_aligned": reads_aligned,
+        "pct_AtoG_first_10bp": first_10_pct,
+        "pct_AtoG_anywhere": full_sequence_pct,
+        "guide_seq": amplicon_row.protospacer,
+        "search_sequences_first_10bp": ";".join(first_10_seqs),
+        "search_sequences_any": ";".join(full_seqs)
+    }
+
+def quantify_sample(amplicon_row: AmpliconConfig, crispresso_dir: Path) -> dict:
+    matches = glob(str(crispresso_dir / "CRISPResso_on_*"))
+    if not matches:
+        raise FileNotFoundError(f"No CRISPResso output folder found in {crispresso_dir}")
+    crispresso_subfolder = Path(matches[0])
+
+    allele_file_matches = glob(str(crispresso_subfolder / "Alleles_frequency_table_around_sgRNA_*.txt"))
+    if len(allele_file_matches) != 1:
+        raise ValueError(f"Expected exactly one allele table in {crispresso_subfolder}, found {len(allele_file_matches)}")
+
+    allele_file = Path(allele_file_matches[0])    
+
+    stats_file = crispresso_subfolder / "CRISPResso_mapping_statistics.txt"
+    
+    reads_total, reads_aligned = read_mapping_stats(stats_file)
+
+    allele_table_df = read_allele_table(allele_file)
+
+    if amplicon_row.intended_edit == "ONESEQ":
+        results_dict = quantify_oneseq_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned)
+    elif amplicon_row.editor == "ABE":
+        results_dict = quantify_abe_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned)
+    else:
+        raise ValueError(f"Unknown editor type: {amplicon_row.editor}")
+    return results_dict

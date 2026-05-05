@@ -77,3 +77,50 @@ def generate_search_sequences(
         sequences = [reverse_complement(s) for s in sequences]
 
     return sequences
+
+def generate_oneseq_search_sequences(protospacer:str,
+                                     orientation:str) -> tuple[list[str], list[str]]:
+    
+    if orientation not in ("F", "R"):
+        raise ValueError(f"Could not determine whether forward or reverse orientaiton")
+    if orientation == "R":
+        working_seq = reverse_complement(protospacer)
+    else:
+        working_seq = protospacer
+    a_pos_full_protospacer = []
+    for index, c in enumerate(working_seq):
+        if c.upper() == "A":
+            a_pos_full_protospacer.append(index)
+
+    a_pos_first_ten_of_protospacer = []
+    if orientation == "F":
+        for index, c in enumerate(working_seq[:10]):
+            if c.upper()  == "A":
+                a_pos_first_ten_of_protospacer.append(index)
+    elif orientation == "R":
+        for index, c in enumerate(working_seq[-10:], start = len(working_seq) - 10):
+            if c.upper() == "A":
+                a_pos_first_ten_of_protospacer.append(index)
+    first_10bp_seqs = []
+    for i in range(1, len(a_pos_first_ten_of_protospacer)+1):
+        for combo in combinations(a_pos_first_ten_of_protospacer, i):
+            seq = list(working_seq)
+            for pos in combo:
+                seq[pos] = "G"
+            first_10bp_seqs.append("".join(seq))
+    full_bp_seqs = []
+    for i in range(1, len(a_pos_full_protospacer) + 1):
+        for combo in combinations(a_pos_full_protospacer, i):
+            seq = list(working_seq)
+            for pos in combo:
+                seq[pos] = "G"
+            full_bp_seqs.append("".join(seq))
+    
+    if orientation == "R":
+        for index, seq in enumerate(first_10bp_seqs):
+            first_10bp_seqs[index] = reverse_complement(seq)
+        for index, seq in enumerate(full_bp_seqs):
+            full_bp_seqs[index] = reverse_complement(seq)
+
+        
+    return (first_10bp_seqs, full_bp_seqs)

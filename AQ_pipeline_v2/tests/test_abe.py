@@ -69,3 +69,41 @@ def test_protospacer_metrics_invalid_orientation_FORCED_FAIL():
         })
         protospacer = "ATTTTTTT"
         calculate_protospacer_metrics(table, protospacer, intended_edit=1, orientation="X")
+
+def test_calculate_correction_no_matches():
+    table = pd.DataFrame({
+        "Aligned_Sequence": ["GATCGAACGT", "GATCGGACGT" ,"AATCGAACGT"],
+        "%Reads": [35.0, 25.0, 40.0]
+    })
+    search_sequences = ["AGTCAGTCAG", "AGTCAGTCAG"]
+
+    without, with_ = calculate_correction(table, search_sequences)
+
+    assert without == 0
+    assert with_ == 0
+
+def test_calcualte_correction_deletion_at_intended_edit_position():
+    table = pd.DataFrame({
+        "Aligned_Sequence": ["GATCG-ACGT", "GATCGGACGT" ,"AATCGAACGT"],
+        "%Reads": [35.0, 25.0, 40.0]
+    })
+    search_sequences = ["GATCGAACGT", "GATCGGACGT"]
+
+    without, with_ = calculate_correction(table, search_sequences)
+    
+    assert without == 0.0
+    assert with_ == 25.0
+
+def test_protospacer_metrics_deletion_at_intended_position():
+    table = pd.DataFrame({
+        "Aligned_Sequence": ["-TTTTTTT",   # deletion at intended position → neither metric
+                             "GTTTTTTT",   # A→G at intended position → both metrics
+                             "ATTTTTTT"],  # no edit → neither
+        "%Reads": [30.0, 40.0, 30.0]
+    })
+    protospacer = "ATTTTTTT"
+
+    any_AtoG, any_change = calculate_protospacer_metrics(table, protospacer, intended_edit=1, orientation="F")
+
+    assert any_AtoG == 40.0
+    assert any_change == 40.0
