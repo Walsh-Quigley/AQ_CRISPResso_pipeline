@@ -80,27 +80,36 @@ def generate_search_sequences(
 
 def generate_oneseq_search_sequences(protospacer:str,
                                      orientation:str) -> tuple[list[str], list[str]]:
+    """Creates search sequences used in the ONEseq analysis
+    Args: 
+        protospacer: the users guide sequence
+        orientation: the orientation of the guide sequence relative to teh amplicon
+    Returns:
+        tuple[list[str], list[str]]: returns a tuple of lists containing sequences with edits in
+            the first 10bp and edits anywhere in the protospacer respectivly 
+    Raises:
+        ValueError: orientation is neither forward nor reverse
+    Note:
+        For R orientation, edited sequences are reverse-complemented before being returned
+        so they match the amplicon-strand sequences reported by CRISPResso's allele table.
+        An A->G edit on the guide strand appears as T->C in the allele table.
+    """
     
     if orientation not in ("F", "R"):
         raise ValueError(f"Could not determine whether forward or reverse orientaiton")
-    if orientation == "R":
-        working_seq = reverse_complement(protospacer)
-    else:
-        working_seq = protospacer
+    
+    working_seq = protospacer
+    
     a_pos_full_protospacer = []
     for index, c in enumerate(working_seq):
         if c.upper() == "A":
             a_pos_full_protospacer.append(index)
 
     a_pos_first_ten_of_protospacer = []
-    if orientation == "F":
-        for index, c in enumerate(working_seq[:10]):
-            if c.upper()  == "A":
-                a_pos_first_ten_of_protospacer.append(index)
-    elif orientation == "R":
-        for index, c in enumerate(working_seq[-10:], start = len(working_seq) - 10):
-            if c.upper() == "A":
-                a_pos_first_ten_of_protospacer.append(index)
+
+    for index, c in enumerate(working_seq[:10]):
+        if c.upper() == "A":
+            a_pos_first_ten_of_protospacer.append(index)
     first_10bp_seqs = []
     for i in range(1, len(a_pos_first_ten_of_protospacer)+1):
         for combo in combinations(a_pos_first_ten_of_protospacer, i):

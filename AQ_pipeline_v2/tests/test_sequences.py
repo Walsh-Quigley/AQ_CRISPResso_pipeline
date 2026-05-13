@@ -1,5 +1,5 @@
 import pytest
-from utils.sequences import reverse_complement, generate_search_sequences
+from utils.sequences import reverse_complement, generate_search_sequences, generate_oneseq_search_sequences
 
 
 """Tests for utils/sequences.py - covers reverse complement extensively, generate search
@@ -165,3 +165,66 @@ def test_generate_search_sequences_wrong_tolerated_base_reverse_FORCED_FAIL():
             tolerated_edits=[8, 9, 10],
             orientation="R"
         )
+
+
+def test_generate_oneseq_search_sequences_single_edit_forward():
+    protospacer = "AGGGGTTTTTCCCCCGGGGG"
+    orientation = "F"
+    first_10, full = generate_oneseq_search_sequences(protospacer, orientation)
+    assert first_10 == ["GGGGGTTTTTCCCCCGGGGG"]
+    assert full == ["GGGGGTTTTTCCCCCGGGGG"]
+
+def test_generate_oneseq_search_sequences_no_edit_forward():
+    protospacer = "GGGGGTTTTTCCCCCGGGGG"
+    orientation = "F"
+    first_10, full = generate_oneseq_search_sequences(protospacer, orientation)
+    assert first_10 == []
+    assert full == []
+
+def test_generate_oneseq_search_sequences_edit_post_10bp_forward():
+    protospacer = "GGGGGTTTTTCCCCCGGAGG"
+    orientation = "F"
+    first_10, full = generate_oneseq_search_sequences(protospacer, orientation)
+    assert first_10 == []
+    assert full == ["GGGGGTTTTTCCCCCGGGGG"]
+
+def test_generate_oneseq_search_sequence_edit_pre_and_post_10bp_forward():
+    protospacer = "GGAGGTTTTTCCCCCGGAGG"
+    orientation = "F"
+    first_10, full = generate_oneseq_search_sequences(protospacer, orientation)
+    assert first_10 == ["GGGGGTTTTTCCCCCGGAGG"]
+    assert full == ["GGGGGTTTTTCCCCCGGAGG", "GGAGGTTTTTCCCCCGGGGG", "GGGGGTTTTTCCCCCGGGGG"]
+
+def test_generate_oneseq_search_sequence_last_10bp_reverse():
+    protospacer = "CCCCCTTTTTCCCCCGGAGG"
+    orientation = "R"
+    first_10, full = generate_oneseq_search_sequences(protospacer, orientation)
+    assert first_10 == []
+    assert full == ["CCCCCGGGGGAAAAAGGGGG"]
+    
+def test_generate_oneseq_search_sequence_first10bp_reverse():
+    protospacer = "GGAGGTTTTTCCCCCGGGGG"
+    orientation = "R"
+    first_10, full = generate_oneseq_search_sequences(protospacer, orientation)
+    assert first_10 == ["CCCCCGGGGGAAAAACCCCC"]
+    assert full == ["CCCCCGGGGGAAAAACCCCC"]
+
+def test_generate_invalid_orientation_FORCED_FAIL():
+    protospacer = "GGAGGTTTTTCCCCCGGGGG"
+    orientation = "X"
+    with pytest.raises(ValueError):
+        first_10, full = generate_oneseq_search_sequences(protospacer, orientation)
+
+def test_generate_oneseq_sequences_A_at_boundary_inside():
+    protospacer = "GGGGGTTTTACCCCCGGGGG"
+    orientation = "F"
+    first_10, full = generate_oneseq_search_sequences(protospacer, orientation)
+    assert first_10 == ["GGGGGTTTTGCCCCCGGGGG"]
+    assert full == ["GGGGGTTTTGCCCCCGGGGG"]
+
+def test_generate_oneseq_sequences_A_at_boundary_outside():
+    protospacer = "GGGGGTTTTTACCCCGGGGG"
+    orientation = "F"
+    first_10, full = generate_oneseq_search_sequences(protospacer, orientation)
+    assert first_10 == []
+    assert full == ["GGGGGTTTTTGCCCCGGGGG"]

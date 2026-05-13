@@ -47,3 +47,10 @@ def read_allele_table(path: Path) -> pd.DataFrame:
     """
     df = pd.read_csv(path, sep="\t")
     return df
+
+def read_quant_window(path: Path) -> pd.DataFrame:
+    df = pd.read_csv(path, sep="\t")
+    df = df.set_index("Base")
+    df = df.astype(float)
+    return df
+

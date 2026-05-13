@@ -15,6 +15,16 @@ def quantify_abe_sample(amplicon_row: AmpliconConfig,
                         allele_table_df: pd.DataFrame,
                         reads_total: int,
                         reads_aligned: int) -> dict:
+    """creates the dictionary for samples with ABE editing
+    Args:
+        amplicon_row: the AmpliconConfig object for the given CRISPResso sample
+        sample_name: name of the CRISPResso sample
+        allele_table_df: the dataframe containing the allele frequecy table information
+        reads_total: the number of total reads for a sample
+        reads_aligned: the number of reads aligned to the given amplicon
+    Returns:
+        dict: the dictionary containing all the information relevent to the ABE analysis of a crispresso sample
+        """
 
     search_seqs = generate_search_sequences(
         protospacer=amplicon_row.protospacer,
@@ -53,6 +63,15 @@ def quantify_oneseq_sample(amplicon_row: AmpliconConfig,
                             allele_table_df: pd.DataFrame,
                             reads_total: int,
                             reads_aligned: int) -> dict:
+    """creates a dictionary containing relevent analytics about a given CRISPResso sample.
+    Args:
+        amplicon_row: the AmpliconConfig object for the specific sample
+        sample_name: the name of the sample analysis is being performed on
+        allele_table_df: the dataframe containing the information from the Allele Frequency Table from a sample
+        reads_total: the number of total reads in a fastq
+        reads_aligned: the number of reads that aligned in the fastq
+    Returns:
+        dict: returns a dictionary of all information from a given sample"""
     first_10_seqs, full_seqs = generate_oneseq_search_sequences(
         protospacer=amplicon_row.protospacer,
         orientation=amplicon_row.orientation
@@ -72,6 +91,16 @@ def quantify_oneseq_sample(amplicon_row: AmpliconConfig,
     }
 
 def quantify_sample(amplicon_row: AmpliconConfig, crispresso_dir: Path) -> dict:
+    """"the guiding path for the sample quantification, determined by what kind of editor
+    Args:
+        amplicon_row: the AmpliconConfig object for the given CRISPResso sample
+        crispresso_dir: the path to the crispresso directory
+    Returns:
+        dict: the result dictionary passed through from the relevent analysis branch
+    Raises:
+        FileNotFoundError: no CIRSPResso output folder found int he directory
+        ValueError: multiple allele tables found in the CRISPResso subfolder
+        ValueError: unknown editor type"""
     matches = glob(str(crispresso_dir / "CRISPResso_on_*"))
     if not matches:
         raise FileNotFoundError(f"No CRISPResso output folder found in {crispresso_dir}")

@@ -166,8 +166,8 @@ The terminal will display progress as each sample is processed. On completion, t
 ### Log files
 A log file is generated at logs/quantification_loop.log
 
-### Quantification_Summary.csv
-The output of the quantification section of this pipeline is a comprehensive table in the following format:
+### ABE_Quantification_Summary.csv
+For each sample, summarizes ABE correction efficiency across a hierarchy of increasingly permissive sequence matching criteria.
 
 | Column | Header | Description |
 |--------|--------|-------------|
@@ -184,6 +184,21 @@ The output of the quantification section of this pipeline is a comprehensive tab
 | K | target_locus | Protospacer sequence |
 | L | perfect_correction | Ideal corrected sequence with only the intended edit |
 | M | corrected_locus_with_bystanders | All corrected sequences searched, separated by semicolons |
+
+### ONESEQ_Quantification_Summary.csv
+For each sample, reports the percentage of reads containing A→G edits within the first 10 bp of the protospacer and anywhere across the full protospacer.
+
+| Column | Header | Description |
+|--------|--------|-------------|
+| A | sample | Fastq directory identifier |
+| B | reads_total | Total reads after preprocessing |
+| C | reads_aligned | Reads successfully aligned to the amplicon |
+| D | pct_AtoG_first_10bp | % of reads with editing within the first 10 bp of the protospacer |
+| E | pct_AtoG_anywhere | % of reads with editing anywhere within the protospacer |
+| F | guide_seq | the protospacer used for a given sample |
+| G | search_sequences_first_10bp | All sequences containing editing in the first 10bp of the protospacer |
+| H | search_sequences_any | All sequences containing editing anywhere in the protospacer |
+
 
 ### Prism CSV (Prism_Input.csv)
 The Prism CSV pivots the quantification summary into a wide format suitable for direct import into GraphPad Prism. Each row represents a unique base sample, and replicate columns are appended with _rep1, _rep2, _rep3.
