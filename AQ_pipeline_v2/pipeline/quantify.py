@@ -64,7 +64,7 @@ def quantify_het_sample(amplicon_row: AmpliconConfig,
                         allele_table_df: pd.DataFrame,
                         reads_total: int,
                         reads_aligned: int,
-                        het_pos: int,
+                        het_pos: list[int],
                         het_base1: str,
                         het_base2: str) -> dict:
     search_seqs = generate_search_sequences(
@@ -111,11 +111,11 @@ def quantify_het_sample(amplicon_row: AmpliconConfig,
         **het_protospacer_metrics_dict,
         "w_bystanders_minus_wo_bystanders_allele1": round(het_correction_dict["correction_w_bystanders_allele1"] - het_correction_dict["correction_wo_bystanders_allele1"], 2),
         "w_bystanders_minus_wo_bystanders_allele2": round(het_correction_dict["correction_w_bystanders_allele2"] - het_correction_dict["correction_wo_bystanders_allele2"], 2),
-        "any_AtoG_minus_w_bystanders_allele1": round(het_protospacer_metrics_dict["any_AtoG_change_in_protospacer_base1"] - het_correction_dict["correction_w_bystanders_allele1"], 2),
-        "any_AtoG_minus_w_bystanders_allele2": round(het_protospacer_metrics_dict["any_AtoG_change_in_protospacer_base2"] - het_correction_dict["correction_w_bystanders_allele2"], 2),
-        "any_change_minus_any_AtoG_allele1": round(het_protospacer_metrics_dict["any_change_in_protospacer_base1"] - het_protospacer_metrics_dict["any_AtoG_change_in_protospacer_base1"], 2),
-        "any_change_minus_any_AtoG_allele2": round(het_protospacer_metrics_dict["any_change_in_protospacer_base2"] - het_protospacer_metrics_dict["any_AtoG_change_in_protospacer_base2"], 2),
-        "het_position": het_pos + 1,
+        "any_AtoG_minus_w_bystanders_allele1": round(het_protospacer_metrics_dict["correction_with_any_AtoG_change_allele1"] - het_correction_dict["correction_w_bystanders_allele1"], 2),
+        "any_AtoG_minus_w_bystanders_allele2": round(het_protospacer_metrics_dict["correction_with_any_AtoG_change_allele2"] - het_correction_dict["correction_w_bystanders_allele2"], 2),
+        "any_change_minus_any_AtoG_allele1": round(het_protospacer_metrics_dict["correction_with_any_change_in_protospacer_allele1"] - het_protospacer_metrics_dict["correction_with_any_AtoG_change_allele1"], 2),
+        "any_change_minus_any_AtoG_allele2": round(het_protospacer_metrics_dict["correction_with_any_change_in_protospacer_allele2"] - het_protospacer_metrics_dict["correction_with_any_AtoG_change_allele2"], 2),
+        "het_position": het_pos[0] + 1,
         "het_alleles": f"{het_base1}/{het_base2}",
         "target_locus":amplicon_row.protospacer,
         "perfect_correction": search_seqs[0],
@@ -189,7 +189,7 @@ def quantify_sample(amplicon_row: AmpliconConfig, crispresso_dir: Path) -> dict:
 
     if amplicon_row.intended_edit == "ONESEQ":
         results_dict = quantify_oneseq_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned)
-    elif amplicon_row.editor == "ABE" and het_pos is not None:
+    elif amplicon_row.editor == "ABE" and het_pos:
         results_dict = quantify_het_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned, het_pos, base1, base2)
     elif amplicon_row.editor == "ABE":
         results_dict = quantify_abe_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned)

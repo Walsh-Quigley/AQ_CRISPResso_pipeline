@@ -9,6 +9,7 @@ forced fail, and multiple allele frequency tables forced fail"""
 
 def test_quantify_sample(tmp_path):
     CRISPResso_mapping_statistic = tmp_path / "sample_dir" / "CRISPResso_on_sample" / "CRISPResso_mapping_statistics.txt" 
+    Quantification_window = tmp_path / "sample_dir" / "CRISPResso_on_sample" / "Quantification_window_nucleotide_percentage_table.txt"
     Alleles_frequency_table_around_sgRNA_XXXX = tmp_path / "sample_dir" / "CRISPResso_on_sample" / "Alleles_frequency_table_around_sgRNA_XXXX.txt" 
     CRISPResso_mapping_statistic.parent.mkdir(parents=True)
     CRISPResso_mapping_statistic.write_text(
@@ -29,6 +30,13 @@ def test_quantify_sample(tmp_path):
                        amplicon="CCTTTTTTTAGATGGCGCTCATTGTGCCTGGCAACTGGTAGCTGGAGGACAGTACTGTATACCCCCGAACTGTGATGGGCTTGGATCCATGTCTGATGTACTGTGTGCAGCAAGACCTCAATCCTTTGGGTGTATGGGTCG", 
                        intended_edit=6, tolerated_edits=[14], note="")
     ]
+    Quantification_window.write_text(
+        "Base\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t13\t14\t15\t16\t17\t18\t19\t20\n"
+        "A\t0.95\t0.02\t0.02\t0.95\t0.95\t0.95\t0.02\t0.02\t0.02\t0.02\t0.02\t0.02\t0.95\t0.02\t0.02\t0.02\t0.02\t0.02\t0.02\t0.95\n"
+        "C\t0.02\t0.02\t0.95\t0.02\t0.02\t0.02\t0.02\t0.95\t0.95\t0.95\t0.95\t0.95\t0.02\t0.02\t0.02\t0.02\t0.02\t0.02\t0.02\t0.02\n"
+        "G\t0.02\t0.02\t0.02\t0.02\t0.02\t0.02\t0.02\t0.02\t0.02\t0.02\t0.02\t0.02\t0.02\t0.95\t0.95\t0.02\t0.02\t0.02\t0.02\t0.02\n"
+        "T\t0.01\t0.95\t0.01\t0.01\t0.01\t0.01\t0.95\t0.01\t0.01\t0.01\t0.01\t0.01\t0.01\t0.01\t0.01\t0.95\t0.95\t0.95\t0.95\t0.01\n"
+    )
     result = quantify_sample(configs[0], tmp_path/"sample_dir")
     assert result["sample"] == "sample_dir"
     assert result["reads_total"] == 6500
@@ -37,9 +45,9 @@ def test_quantify_sample(tmp_path):
     assert result["correction_with_tolerated_bystanders"] == 28.33
     assert result["correction_with_any_AtoG_change"] == 40
     assert result["correction_with_any_change_in_protospacer"] == 50
-    assert result["column E minus column D"] == 13.33
-    assert result["column F minus column E"] == 11.67
-    assert result["column G minus column F"] == 10
+    assert result["w_bystanders_minus_wo_bystanders"] == 13.33
+    assert result["any_AtoG_minus_w_bystanders"] == 11.67
+    assert result["any_change_minus_any_AtoG"] == 10
     assert result["target_locus"] == "TGTATACCCCCGAACTGTGA"
     assert result["perfect_correction"] == "TGTATGCCCCCGAACTGTGA"
     assert result["corrected_locus_with_bystanders"] == "TGTATGCCCCCGAACTGTGA;TGTATGCCCCCGAGCTGTGA"
