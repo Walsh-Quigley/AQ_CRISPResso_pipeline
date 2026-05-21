@@ -47,6 +47,11 @@ def load_amplicon_list(path: Path) -> list[AmpliconConfig]:
                 intended_edit = int(intended_edit_raw)
             else:
                 raise ValueError(f"Invalid intended_edit value '{row['intended_edit']}' for amplicon '{name}'")
+            if intended_edit == "ONESEQ" and editor != "ONESEQ":
+                raise ValueError(f"Amplicon '{name}' has intended_edit=ONE-SEQ but editor is '{editor}' — set editor to ONESEQ.")
+            if editor == "ONESEQ" and intended_edit != "ONESEQ":
+                raise ValueError(f"Amplicon '{name}' has editor=ONESEQ but intended_edit is '{intended_edit}' — set intended_edit to ONE-SEQ.")
+
 
             tolerated_edits_raw = row.get("tolerated_edits", "").strip()
             if tolerated_edits_raw:

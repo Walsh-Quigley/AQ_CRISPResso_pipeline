@@ -50,8 +50,8 @@ def calculate_het_correction(allele_table_df: pd.DataFrame,
     pct_w_base2 = ((reads_w_base2 / total_reads_base2) * 100)  if total_reads_base2 > 0 else 0.0
 
     resultsDict = {
-    "correction_w_bystanders_allele1": pct_w_base1,
     "correction_wo_bystanders_allele1": pct_wo_base1,
+    "correction_w_bystanders_allele1": pct_w_base1,
     "correction_w_bystanders_allele2": pct_w_base2,
     "correction_wo_bystanders_allele2": pct_wo_base2,
     }

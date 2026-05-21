@@ -4,10 +4,11 @@ import pandas as pd
 import re
 from config import AmpliconConfig
 from loaders.crispresso_output import read_mapping_stats, read_allele_table, read_quant_window
-from utils.sequences import generate_search_sequences, generate_oneseq_search_sequences
+from utils.sequences import generate_search_sequences, generate_oneseq_search_sequences, reverse_complement
 from analysis.abe import calculate_correction, calculate_protospacer_metrics
 from analysis.oneseq import calculate_oneseq
 from analysis.heterozygous import calculate_het_correction, calculate_het_protospacer_metrics, find_het_position
+
 
 # Stage 2 -> parses CRISPResso outputs, calls analysis modules,
 # assembles final reasult
@@ -67,6 +68,14 @@ def quantify_het_sample(amplicon_row: AmpliconConfig,
                         het_pos: list[int],
                         het_base1: str,
                         het_base2: str) -> dict:
+    base = None
+    if amplicon_row.orientation == "F":
+        base = amplicon_row.protospacer[het_pos[0]]
+    elif amplicon_row.orientation == "R":
+        base = reverse_complement(amplicon_row.protospacer)[het_pos[0]]
+    if base == het_base2:
+        het_base1, het_base2 = het_base2, het_base1
+
     search_seqs = generate_search_sequences(
         protospacer=amplicon_row.protospacer,
         intended_edit=amplicon_row.intended_edit,
@@ -185,12 +194,14 @@ def quantify_sample(amplicon_row: AmpliconConfig, crispresso_dir: Path) -> dict:
     quant_window = crispresso_subfolder / "Quantification_window_nucleotide_percentage_table.txt"
     quant_window_df = read_quant_window(quant_window)
     het_pos, base1, base2 = find_het_position(quant_window_df)
+
     
 
     if amplicon_row.intended_edit == "ONESEQ":
         results_dict = quantify_oneseq_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned)
     elif amplicon_row.editor == "ABE" and het_pos:
         results_dict = quantify_het_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned, het_pos, base1, base2)
+    
     elif amplicon_row.editor == "ABE":
         results_dict = quantify_abe_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned)
     else:

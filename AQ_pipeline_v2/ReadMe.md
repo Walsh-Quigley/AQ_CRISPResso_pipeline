@@ -178,12 +178,52 @@ For each sample, summarizes ABE correction efficiency across a hierarchy of incr
 | E | correction_with_tolerated_bystanders | % reads with correction at intended position, allowing tolerated bystander edits |
 | F | correction_with_any_AtoG_change | % reads with correction at intended position, allowing any A→G change in protospacer |
 | G | correction_with_any_change_in_protospacer | % reads with correction at intended position, independent of any other protospacer changes |
-| H | column E minus column D | Gain from allowing tolerated bystanders |
-| I | column F minus column E | Gain from allowing any A→G change |
-| J | column G minus column F | Gain from allowing any protospacer change |
+| H | w_bystanders_minus_wo_bystanders | Gain from allowing tolerated bystanders |
+| I | any_AtoG_minus_w_bystanders | Gain from allowing any A→G change |
+| J | any_change_minus_any_AtoG | Gain from allowing any protospacer change |
 | K | target_locus | Protospacer sequence |
 | L | perfect_correction | Ideal corrected sequence with only the intended edit |
 | M | corrected_locus_with_bystanders | All corrected sequences searched, separated by semicolons |
+
+### Heterozygous Samples 
+In the case of a heterozygous sample, the output table will have additional columns, split by allele. The report will be formatted in this way:
+| Column | Header | Description |
+|--------|--------|-------------|
+| A | sample | Fastq directory identifier |
+| B | reads_total | Total reads after preprocessing |
+| C | reads_aligned | Reads successfully aligned to the amplicon |
+| D | correction_without_bystanders | % reads with correction at intended position only |
+| E | correction_with_tolerated_bystanders | % reads with correction at intended position, allowing tolerated bystander edits |
+| F | correction_with_any_AtoG_change | % reads with correction at intended position, allowing any A→G change in protospacer |
+| G | correction_with_any_change_in_protospacer | % reads with correction at intended position, independent of any other protospacer changes |
+| H | w_bystanders_minus_wo_bystanders | Gain from allowing tolerated bystanders |
+| I | any_AtoG_minus_w_bystanders | Gain from allowing any A→G change |
+| J | any_change_minus_any_AtoG | Gain from allowing any protospacer change |
+
+| Column | Header | Description |
+|--------|--------|-------------|
+| K | correction_wo_bystanders_allele1 | % reads with correction at intended position only, for allele 1 |
+| L | correction_w_bystanders_allele1 | % reads with correction at intended position, allowing tolerated bystander edits, for allele 1 |
+| M | correction_wo_bystanders_allele2 | % reads with correction at intended position only, for allele 2 |
+| N | correction_w_bystanders_allele2 | % reads with correction at intended position, allowing tolerated bystander edits, for allele 2 |
+| O | correction_with_any_AtoG_change_allele1 | % reads with correction at intended position, allowing any A→G change in protospacer, for allele 1 |
+| P | correction_with_any_change_in_protospacer_allele1 | % reads with correction at intended position, independent of any other protospacer changes, for allele 1 |
+| Q | correction_with_any_AtoG_change_allele2 | % reads with correction at intended position, allowing any A→G change in protospacer, for allele 2 |
+| R | correction_with_any_change_in_protospacer_allele2 | % reads with correction at intended position, independent of any other protospacer changes, for allele 2 |
+| S | w_bystanders_minus_wo_bystanders_allele1 | Gain from allowing tolerated bystanders, allele 1 |
+| T | w_bystanders_minus_wo_bystanders_allele2 | Gain from allowing tolerated bystanders, allele 2 |
+| U | any_AtoG_minus_w_bystanders_allele1 | Gain from allowing any A→G change, allele 1 |
+| V | any_AtoG_minus_w_bystanders_allele2 | Gain from allowing any A→G change, allele 2 |
+| W | any_change_minus_any_AtoG_allele1 | Gain from allowing any protospacer change, allele 1 |
+| X | any_change_minus_any_AtoG_allele2 | Gain from allowing any protospacer change, allele 2 |
+| Y | het_position | Position of the detected heterozygous site (1-based) |
+| Z | het_alleles | The two bases at the heterozygous position, e.g. A/C |
+
+| Column | Header | Description |
+|--------|--------|-------------|
+| AA | target_locus | Protospacer sequence |
+| AB | perfect_correction | Ideal corrected sequence with only the intended edit |
+| AC | corrected_locus_with_bystanders | All corrected sequences searched, separated by semicolons |
 
 ### ONESEQ_Quantification_Summary.csv
 For each sample, reports the percentage of reads containing A→G edits within the first 10 bp of the protospacer and anywhere across the full protospacer.
