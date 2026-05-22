@@ -32,16 +32,9 @@ def generate_prism_csv(df: pd.DataFrame) -> pd.DataFrame:
 
     dfcopy["base_sample"] = dfcopy["sample"].str.replace(r'[-_]\d+$', '', regex=True)
 
-    dfcopy = dfcopy.rename(columns={
-        "column E minus column D": "w_bystanders_minus_wo_bystanders",
-        "column F minus column E": "any_AtoG_minus_w_bystanders",
-        "column G minus column F": "any_protospacer_change_minus_any_AtoG",
-        }
-    )
-
     numeric_cols = ["reads_total", "reads_aligned", "correction_without_bystanders", 
                     "w_bystanders_minus_wo_bystanders", "any_AtoG_minus_w_bystanders",
-                    "any_protospacer_change_minus_any_AtoG"]
+                    "any_change_minus_any_AtoG"]
     
     numeric_df = dfcopy.pivot(index="base_sample", columns="rep", values=numeric_cols)
 
@@ -62,7 +55,7 @@ def generate_prism_csv(df: pd.DataFrame) -> pd.DataFrame:
         "correction_without_bystanders_rep1", "correction_without_bystanders_rep2", "correction_without_bystanders_rep3",
         "w_bystanders_minus_wo_bystanders_rep1", "w_bystanders_minus_wo_bystanders_rep2", "w_bystanders_minus_wo_bystanders_rep3",
         "any_AtoG_minus_w_bystanders_rep1", "any_AtoG_minus_w_bystanders_rep2", "any_AtoG_minus_w_bystanders_rep3",
-        "any_protospacer_change_minus_any_AtoG_rep1", "any_protospacer_change_minus_any_AtoG_rep2", "any_protospacer_change_minus_any_AtoG_rep3",
+        "any_change_minus_any_AtoG_rep1", "any_change_minus_any_AtoG_rep2", "any_change_minus_any_AtoG_rep3",
     ]
 
     for col in cols_to_keep:

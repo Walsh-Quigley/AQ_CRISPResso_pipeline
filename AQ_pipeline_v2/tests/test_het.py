@@ -202,3 +202,14 @@ def test_calcualte_het_protospacer_metrics_multiple_pos():
     assert round(result["correction_with_any_AtoG_change_allele2"], 2) == 75.00
     assert round(result["correction_with_any_change_in_protospacer_allele2"], 2) == 75.0
 
+def test_find_primary_het_position_skip_deletion():
+    data = {
+        "0": [0.50, 0.02, 0.02, 0.01, 0.00, 0.46],  # position 0: A dominant
+        "1": [0.50, 0.50, 0.00, 0.00, 0.00, 0.00],  # position 1: A/C het
+        "2": [0.02, 0.95, 0.02, 0.01, 0.00, 0.00],  # position 2: C dominant
+    }
+    df = pd.DataFrame(data, index=["A","C","G","T","N","-"])
+    indexes, base1, base2 = find_het_position(df)
+    assert indexes == [1]
+    assert base1 == "A"
+    assert base2 == "C"

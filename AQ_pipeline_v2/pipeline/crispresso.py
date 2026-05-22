@@ -16,6 +16,24 @@ def by_name_length(config) -> int:
     """
     return len(config.name)
 
+def pair_fastq_files(fastq_files: list[str]) -> tuple[str, str]:
+    """Identifies R1 and R2 from a list of exactly two fastq file paths.
+    Args:
+        fastq_files: a list of exactly two fastq file paths
+    Returns:
+        tuple[str, str]: a tuple of (R1 path, R2 path)
+    Raises:
+        ValueError: if R1 and R2 cannot be unambiguously identified
+    """
+    r1_files = [f for f in fastq_files if "_R1" in f.upper()]
+    r2_files = [f for f in fastq_files if "_R2" in f.upper()]
+    if len(r1_files) == 1 and len(r2_files) == 1:
+        read1 = r1_files[0]
+        read2 = r2_files[0]
+    else:
+        raise ValueError(f"could not unambiguously identify R1/R2 in {fastq_files}")
+    return(read1, read2)
+
 
 def identify_amplicon(directory_name: str, amplicon_configs: list[AmpliconConfig]) -> AmpliconConfig:
     """matches the correct amplicon to the given sample
@@ -56,9 +74,10 @@ def run_crispresso(amplicon_list_row: AmpliconConfig, sample_dir: Path) -> None:
         None: the purpose of the function is to run the CRISPResso command, no return value
     Raises:
         FileNotFoundError: no fastq files found in the sample directory
+        ValueError: unable to distinguish read 1 and read 2 in paired end reads
         ValueError: more than 2 fastq files found in the sample directory
     """
-    fastq_files = glob(str(sample_dir / "*.fastq.gz")) + glob(str(sample_dir / "*fastq"))
+    fastq_files = sorted(glob(str(sample_dir / "*.fastq.gz")) + glob(str(sample_dir / "*.fastq")))
 
     if not fastq_files:
         raise FileNotFoundError(f"No FASTQ files found in {sample_dir}")
@@ -66,7 +85,8 @@ def run_crispresso(amplicon_list_row: AmpliconConfig, sample_dir: Path) -> None:
     elif len(fastq_files) == 1:
         fastq_cmd_section = ['--fastq_r1', fastq_files[0]]
     elif len(fastq_files) == 2:
-        fastq_cmd_section = ['--fastq_r1', fastq_files[0], '--fastq_r2', fastq_files[1]]
+        read1, read2 = pair_fastq_files(fastq_files)
+        fastq_cmd_section = ['--fastq_r1', read1, '--fastq_r2', read2]
     else:
         raise ValueError(f"More than two FASTQ files found in {sample_dir}")
 

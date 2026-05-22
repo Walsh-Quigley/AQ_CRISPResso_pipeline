@@ -18,6 +18,8 @@ def find_het_position(quant_window_df: pd.DataFrame) -> tuple[list[int], str | N
         col_data = quant_window_df[col]
         bases_in_range = []
         for base in col_data.index:
+            if base not in ("A", "C", "G", "T"):
+                continue
             if 0.40 <= col_data[base] <= 0.60:
                 bases_in_range.append(base)
         if len(bases_in_range) == 2:                        
