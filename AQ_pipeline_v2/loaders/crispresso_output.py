@@ -5,7 +5,7 @@ from pathlib import Path
 # Reads CRISPResso ouput files: allele frequency tables, mapping statistics
 
 def read_mapping_stats(path: Path) -> tuple[int, int]:
-    """Opens the CRISPRessso_mapping_statistics file and collects the total and
+    """Opens the CRISPResso_mapping_statistics file and collects the total and
     aligned read number
     Args: 
         path: Path to the CRISPResso_mapping_statstics file
@@ -49,6 +49,13 @@ def read_allele_table(path: Path) -> pd.DataFrame:
     return df
 
 def read_quant_window(path: Path) -> pd.DataFrame:
+    """Reads the CRISPResso quantification to create a dataframe for downstream use
+    Args:
+        path: file path to the quantification table
+    Returns:
+        pd.DataFrame: a pandas dataframe of the quantification window
+    Raises:
+        FileNotFoundError: if read_csv's open() call fails"""
     df = pd.read_csv(path, sep="\t", index_col=0)
     df = df.astype(float)
     return df

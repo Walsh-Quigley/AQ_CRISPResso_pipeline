@@ -56,7 +56,7 @@ def run_crispresso(amplicon_list_row: AmpliconConfig, sample_dir: Path) -> None:
         None: the purpose of the function is to run the CRISPResso command, no return value
     Raises:
         FileNotFoundError: no fastq files found in the sample directory
-        ValueError: more than 2 fastq files found in teh sample directory
+        ValueError: more than 2 fastq files found in the sample directory
     """
     fastq_files = glob(str(sample_dir / "*.fastq.gz")) + glob(str(sample_dir / "*fastq"))
 

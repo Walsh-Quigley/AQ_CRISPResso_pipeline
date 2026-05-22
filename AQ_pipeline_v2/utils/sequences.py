@@ -80,10 +80,11 @@ def generate_search_sequences(
 
 def generate_oneseq_search_sequences(protospacer:str,
                                      orientation:str) -> tuple[list[str], list[str]]:
-    """Creates search sequences used in the ONEseq analysis
+    """Creates all search sequences for ONE_seq case. Includes all A to G changes, and A to G changes
+        only in the first 10 bp.
     Args: 
         protospacer: the users guide sequence
-        orientation: the orientation of the guide sequence relative to teh amplicon
+        orientation: the orientation of the guide sequence relative to the amplicon
     Returns:
         tuple[list[str], list[str]]: returns a tuple of lists containing sequences with edits in
             the first 10bp and edits anywhere in the protospacer respectivly 
@@ -96,7 +97,7 @@ def generate_oneseq_search_sequences(protospacer:str,
     """
     
     if orientation not in ("F", "R"):
-        raise ValueError(f"Could not determine whether forward or reverse orientaiton")
+        raise ValueError(f"Could not determine whether forward or reverse orientation")
     
     working_seq = protospacer
     

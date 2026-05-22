@@ -68,6 +68,22 @@ def quantify_het_sample(amplicon_row: AmpliconConfig,
                         het_pos: list[int],
                         het_base1: str,
                         het_base2: str) -> dict:
+    """dispatch catch for heterozygous samples, creates a dictionary for het case
+    Args:
+        amplicon_row: the AmpliconConfig object for a given sample
+        sample_name: the name of the current sample
+        allele_table_df: the dataframe for the current sample's allele frequency table
+        reads_total: total number of reads in the current sample's fastq
+        reads_aligned: total number of ALIGNED reads in the current sample's fastq
+        het_pos: positions of the heterozygous differences, het_pos[0] is the primary het_pos,
+            which determines allele sorting downstream.
+        het_base1: nt at het_pos for allele 1
+        het_base2: nt at het_pos for allele 2
+    Returns:
+        A dictionary containing all sample metrics, broken out by allele for relvent samples.
+    Note:
+        het_base1 will always coorispond to the protospacer allele
+    """
     base = None
     if amplicon_row.orientation == "F":
         base = amplicon_row.protospacer[het_pos[0]]
@@ -171,9 +187,10 @@ def quantify_sample(amplicon_row: AmpliconConfig, crispresso_dir: Path) -> dict:
     Returns:
         dict: the result dictionary passed through from the relevent analysis branch
     Raises:
-        FileNotFoundError: no CIRSPResso output folder found int he directory
+        FileNotFoundError: no CRISPResso output folder found in the directory
         ValueError: multiple allele tables found in the CRISPResso subfolder
         ValueError: unknown editor type"""
+    
     matches = glob(str(crispresso_dir / "CRISPResso_on_*"))
     if not matches:
         raise FileNotFoundError(f"No CRISPResso output folder found in {crispresso_dir}")

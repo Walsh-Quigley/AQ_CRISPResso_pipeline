@@ -79,7 +79,7 @@ def find_amplicon_list(search_dir: Path = Path(".")) -> Path:
     Returns:
         Path: a path to the amplicon_list.csv itself
     Raises:
-        FileNotFoundError: if no file contianing 'amplicon_list' is found.
+        FileNotFoundError: if no file containing 'amplicon_list' is found.
         ValueError: if multiple files containing 'amplicon_list" are found.
     """
     found_lists = 0
@@ -96,5 +96,3 @@ def find_amplicon_list(search_dir: Path = Path(".")) -> Path:
         return to_be_returned
     elif found_lists > 1:
         raise ValueError(f"Multiple amplicon list files found: {', '.join(found_names)}")
-    else:
-        print("it should be impossible for you to see this message")

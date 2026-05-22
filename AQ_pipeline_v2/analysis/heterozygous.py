@@ -5,6 +5,12 @@ from utils.sequences import reverse_complement
 
 
 def find_het_position(quant_window_df: pd.DataFrame) -> tuple[list[int], str | None, str | None]:
+    """finds all positions in protospacer that differ from one allele vs the other
+    Args:
+        quant_window_df: dataframe for the given samples quantification window
+    Returns:
+        tuple[list[int], str, str]: returns a tuple containing the list of positions of het nt, and the 
+            two bases that rest a the primary het index."""
     het_positions = []
     primary_base1 = None
     primary_base2 = None
@@ -18,7 +24,7 @@ def find_het_position(quant_window_df: pd.DataFrame) -> tuple[list[int], str | N
             if set(bases_in_range) in [{"A","G"}, {"C","T"}]:
                 continue                                     
             het_positions.append(idx)
-            if primary_base1 == None and primary_base2 == None:
+            if primary_base1 is None and primary_base2 is None:
                 primary_base1 = bases_in_range[0]
                 primary_base2 = bases_in_range[1]
     return (het_positions, primary_base1, primary_base2)
@@ -28,6 +34,16 @@ def calculate_het_correction(allele_table_df: pd.DataFrame,
                             het_pos: list[int],
                             base1: str,
                             base2: str) -> dict:
+    """calculates correction with bystanders and correction without bystanders for heterozygous samples.
+    Args:
+        allele_table_df: the dataframe for a given sample's allele frequency table
+        search_seqs: the list of strings to search for in the allele frequency table
+        het_pos: the heterozygous positions in the protospacer
+        base1: nt at primary het_pos for allele 1
+        base2: nt at primary het_pos for allele 2
+    Returns:
+        A dictionary containing corrections with bystanders and without bystanders broken up by allele
+    """
     
     primary_het_pos = het_pos[0]
     base1_mask = allele_table_df["Aligned_Sequence"].str[primary_het_pos] == base1
@@ -58,13 +74,29 @@ def calculate_het_correction(allele_table_df: pd.DataFrame,
 
     return resultsDict
 
-def calculate_het_protospacer_metrics(allele_table: pd.DataFrame, 
+def calculate_het_protospacer_metrics(allele_table: pd.DataFrame,   
                                       protospacer: str,
                                       intended_edit: int,
                                       orientation: str,
                                       het_pos: list[int],
                                       base1: str,
                                       base2: str) -> dict:
+    """Calculates correction with A to G change and correction with any change in protospacer for
+        heterozygous samples.
+    Args:
+        allele_table: dataframe containing the allele frequency table for a given sample
+        protospacer: protospacer for the sample
+        intended_edit: the intended edit index
+        orientation: orientation of the protospacer relative to the corresponding amplicon
+        het_pos: the heterozygous positions in the protospacer
+        base1: nt at primary het_pos for allele 1
+        base2: nt at primary het_pos for allele 2
+    Returns:
+        returns a dictionary containing correction with A to G change and correction with any
+            change in protospacer, broken out by allele.
+    Raises:
+        ValueError: raises value error if orientation is neither forward nor reverse
+    """
     
     any_change_in_protospacer_base1 = 0
     any_change_in_protospacer_base2 = 0
@@ -145,15 +177,15 @@ def calculate_het_protospacer_metrics(allele_table: pd.DataFrame,
     
     AtoG_base1 = ((any_AtoG_change_in_protospacer_base1 / total_reads_base1) * 100) if total_reads_base1 > 0 else 0.0
     AtoG_base2 = ((any_AtoG_change_in_protospacer_base2 / total_reads_base2) * 100) if total_reads_base2 > 0 else 0.0
-    Any_change_base_1 = ((any_change_in_protospacer_base1 / total_reads_base1) * 100) if total_reads_base1 > 0 else 0.0
-    Any_change_base_2 = ((any_change_in_protospacer_base2 / total_reads_base2) * 100) if total_reads_base2 > 0 else 0.0
+    any_change_base_1 = ((any_change_in_protospacer_base1 / total_reads_base1) * 100) if total_reads_base1 > 0 else 0.0
+    any_change_base_2 = ((any_change_in_protospacer_base2 / total_reads_base2) * 100) if total_reads_base2 > 0 else 0.0
     
-    resultsDict = {
+    results_dict = {
         "correction_with_any_AtoG_change_allele1": AtoG_base1,
-        "correction_with_any_change_in_protospacer_allele1": Any_change_base_1,
+        "correction_with_any_change_in_protospacer_allele1": any_change_base_1,
         "correction_with_any_AtoG_change_allele2": AtoG_base2,
-        "correction_with_any_change_in_protospacer_allele2": Any_change_base_2,
+        "correction_with_any_change_in_protospacer_allele2": any_change_base_2,
     }
     
     
-    return resultsDict
+    return results_dict

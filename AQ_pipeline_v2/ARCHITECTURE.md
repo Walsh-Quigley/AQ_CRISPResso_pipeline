@@ -12,10 +12,12 @@ graph TD
 
     pipeline/quantify.py --> read_mapping_stats
     pipeline/quantify.py --> read_allele_table
+    pipeline/quantify.py --> read_quant_window
     pipeline/quantify.py --> generate_search_sequences
     pipeline/quantify.py --> generate_oneseq_search_sequences
     pipeline/quantify.py --> analysis/abe.py
     pipeline/quantify.py --> analysis/oneseq.py
+    pipeline/quantify.py --> analysis/heterozygous.py
     pipeline/quantify.py --> export
 
     load_amplicon_list --> AmpliconConfig
@@ -25,6 +27,7 @@ graph TD
         load_amplicon_list
         read_mapping_stats
         read_allele_table
+        read_quant_window
         export
     end
 
@@ -36,7 +39,6 @@ graph TD
 
     subgraph config.py
         AmpliconConfig
-        RunConfig
     end
 ```
 
@@ -44,13 +46,13 @@ graph TD
 
 | File | Status | Purpose |
 |---|---|---|
-| `config.py` | Done | AmpliconConfig and RunConfig dataclasses |
+| `config.py` | Done | AmpliconConfig dataclass |
 | `utils/sequences.py` | Done | reverse_complement, generate_search_sequences, generate_oneseq_search_sequences |
 | `loaders/amplicon_list.py` | Done | Parse amplicon_list.csv into AmpliconConfig objects |
 | `loaders/crispresso_output.py` | Done | Read CRISPResso allele table and mapping stats |
 | `loaders/export.py` | Done | Write summary CSV and PRISM output |
 | `analysis/abe.py` | Done | ABE correction metric calculations |
-| `analysis/heterozygous.py` | Not started | Het position detection and allele splitting |
+| `analysis/heterozygous.py` | Done | Het position detection and allele splitting |
 | `analysis/oneseq.py` | Done | ONE-seq A-to-G analysis |
 | `pipeline/crispresso.py` | Done | Stage 1 — amplicon matching, run CRISPResso on each sample |
 | `pipeline/quantify.py` | Done | Stage 2 — orchestrate analysis, assemble results |

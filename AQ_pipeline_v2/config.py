@@ -13,7 +13,7 @@ class AmpliconConfig:
         name: name of the amplicon
         protospacer: guide sequence 
         editior: type of editing being used
-        orientation: guides oriention relative to the amplicon
+        orientation: guides orientation relative to the amplicon
         amplicon: the amplicon sequence itself
         intended_edit: the intended edit position within the protospacer, 1-indexed
         tolerated_edits: list of tolerated edit positions with the protospacer, 1-indexed
@@ -28,13 +28,3 @@ class AmpliconConfig:
     tolerated_edits: list[int]  # 1-indexed position of tolerated bystander edits
     note: str = ""
 
-
-@dataclass
-class RunConfig:
-    """
-    """
-    fastqs_dir: Path
-    het_min_freq: float = 0.40
-    het_max_freq: float = 0.60
-    generate_prism_output: bool = False
-    output_filename: str = "Quantification_Summary.csv"
