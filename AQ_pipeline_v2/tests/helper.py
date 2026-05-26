@@ -92,3 +92,10 @@ def make_fastq_gz(path: str | Path,
                 f.write(f"{'I' * len(edited_amplicon)}\n")
                 read_counter += 1
                 
+def make_dummy_crispresso_output(tmp_path):
+    sample_dir = tmp_path / "sample"
+    crispresso_sub = sample_dir / "CRISPResso_on_sample"
+    crispresso_sub.mkdir(parents=True)
+    (crispresso_sub / "Alleles_frequency_table_around_sgRNA_X.txt").write_text("dummy")
+    (crispresso_sub / "CRISPResso_mapping_statistics.txt").write_text("dummy")
+    return sample_dir

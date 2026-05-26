@@ -208,19 +208,17 @@ def quantify_sample(amplicon_row: AmpliconConfig, crispresso_dir: Path) -> dict:
 
     allele_table_df = read_allele_table(allele_file)
 
-    quant_window = crispresso_subfolder / "Quantification_window_nucleotide_percentage_table.txt"
-    quant_window_df = read_quant_window(quant_window)
-    het_pos, base1, base2 = find_het_position(quant_window_df)
-
-    
-
     if amplicon_row.intended_edit == "ONESEQ":
         results_dict = quantify_oneseq_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned)
-    elif amplicon_row.editor == "ABE" and het_pos:
-        results_dict = quantify_het_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned, het_pos, base1, base2)
-    
-    elif amplicon_row.editor == "ABE":
-        results_dict = quantify_abe_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned)
     else:
-        raise ValueError(f"Unknown editor type: {amplicon_row.editor}")
+        quant_window = crispresso_subfolder / "Quantification_window_nucleotide_percentage_table.txt"
+        quant_window_df = read_quant_window(quant_window)
+        het_pos, base1, base2 = find_het_position(quant_window_df)
+        if amplicon_row.editor == "ABE" and het_pos:
+            results_dict = quantify_het_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned, het_pos, base1, base2)
+        elif amplicon_row.editor == "ABE":
+            results_dict = quantify_abe_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned)
+        else:
+            raise ValueError(f"Unknown editor type: {amplicon_row.editor}")
+    
     return results_dict

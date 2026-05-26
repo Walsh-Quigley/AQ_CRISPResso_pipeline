@@ -1,4 +1,5 @@
 import pandas as pd
+import logging
 from utils.sequences import reverse_complement
 
 # ABE-specific metric: correction rate with/without bystanders, any A-to-G, any change
@@ -44,10 +45,14 @@ def calculate_protospacer_metrics(allele_table: pd.DataFrame,
         ValueError: orientation is neither forward or reverse
     """
     any_change_in_protospacer = 0
+    alignment_shift_reads_pct = 0.0
     any_AtoG_change_in_protospacer = 0
     rc_protospacer = reverse_complement(protospacer)
 
     for _, row in allele_table.iterrows():
+        if len(row["Aligned_Sequence"]) != len(protospacer):
+            alignment_shift_reads_pct += row["%Reads"]
+            continue    
         if orientation == "F":
             if row["Aligned_Sequence"][intended_edit-1] == "G":
                 any_change_in_protospacer += row["%Reads"]
@@ -72,5 +77,12 @@ def calculate_protospacer_metrics(allele_table: pd.DataFrame,
                     any_AtoG_change_in_protospacer += row["%Reads"]
         else:
             raise ValueError(f"orientation must be 'F' or 'R', got '{orientation}'")
+        
+    if alignment_shift_reads_pct > 3:
+        logging.warning(
+            f"Skipped {alignment_shift_reads_pct:.2f}% of reads with alignment shifts "
+            f"(likely insertions in/near the protospacer region). "
+            f"These reads cannot be reliably analyzed for per-protospacer metrics."
+        )
 
     return(any_AtoG_change_in_protospacer, any_change_in_protospacer,)

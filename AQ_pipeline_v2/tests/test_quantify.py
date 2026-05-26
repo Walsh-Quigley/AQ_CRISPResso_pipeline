@@ -2,9 +2,13 @@ import pytest
 from pathlib import Path
 from pipeline.quantify import quantify_sample
 from config import AmpliconConfig
+from unittest.mock import patch
+import pandas as pd
+from tests.helper import make_dummy_crispresso_output
 
 """Tests for pipeline/quantify.py - covers quantify sample, missing CRISPResso_subfolder
 forced fail, and multiple allele frequency tables forced fail"""
+
 
 
 def test_quantify_sample(tmp_path):
@@ -96,3 +100,89 @@ def test_multiple_allele_frequency_tables_FORCED_FAIL(tmp_path):
     with pytest.raises(ValueError):
         result = quantify_sample(configs[0], tmp_path/"sample_dir")
 
+def test_dispatch_routes_ONESEQ_to_oneseq_sample(tmp_path):
+    sample_dir = make_dummy_crispresso_output(tmp_path)
+    config = AmpliconConfig(
+        name="TEST", protospacer="A" * 20, editor="ONESEQ",
+        orientation="F", amplicon="A" * 30, intended_edit="ONESEQ",
+        tolerated_edits=[], note=""
+    )
+
+    with patch("pipeline.quantify.read_mapping_stats", return_value=(100, 80)), \
+         patch("pipeline.quantify.read_allele_table", return_value=pd.DataFrame()), \
+         patch("pipeline.quantify.read_quant_window", return_value=pd.DataFrame()), \
+         patch("pipeline.quantify.find_het_position", return_value=([], None, None)), \
+         patch("pipeline.quantify.quantify_oneseq_sample", return_value={"branch": "oneseq"}) as mock_oneseq, \
+         patch("pipeline.quantify.quantify_abe_sample", return_value={"branch": "abe"}) as mock_abe, \
+         patch("pipeline.quantify.quantify_het_sample", return_value={"branch": "het"}) as mock_het:
+        result = quantify_sample(config, sample_dir)
+
+    mock_oneseq.assert_called_once()
+    mock_abe.assert_not_called()
+    mock_het.assert_not_called()
+    assert result == {"branch": "oneseq"}
+
+
+def test_dispatch_routes_ABE_non_het_to_abe_sample(tmp_path):
+    sample_dir = make_dummy_crispresso_output(tmp_path)
+    config = AmpliconConfig(
+        name="TEST", protospacer="A" * 20, editor="ABE",
+        orientation="F", amplicon="A" * 30, intended_edit=5,
+        tolerated_edits=[], note=""
+    )
+
+    with patch("pipeline.quantify.read_mapping_stats", return_value=(100, 80)), \
+         patch("pipeline.quantify.read_allele_table", return_value=pd.DataFrame()), \
+         patch("pipeline.quantify.read_quant_window", return_value=pd.DataFrame()), \
+         patch("pipeline.quantify.find_het_position", return_value=([], None, None)), \
+         patch("pipeline.quantify.quantify_oneseq_sample", return_value={"branch": "oneseq"}) as mock_oneseq, \
+         patch("pipeline.quantify.quantify_abe_sample", return_value={"branch": "abe"}) as mock_abe, \
+         patch("pipeline.quantify.quantify_het_sample", return_value={"branch": "het"}) as mock_het:
+        result = quantify_sample(config, sample_dir)
+
+    mock_abe.assert_called_once()
+    mock_oneseq.assert_not_called()
+    mock_het.assert_not_called()
+    assert result == {"branch": "abe"}
+
+
+def test_dispatch_routes_ABE_het_to_het_sample(tmp_path):
+    sample_dir = make_dummy_crispresso_output(tmp_path)
+    config = AmpliconConfig(
+        name="TEST", protospacer="A" * 20, editor="ABE",
+        orientation="F", amplicon="A" * 30, intended_edit=5,
+        tolerated_edits=[], note=""
+    )
+
+    with patch("pipeline.quantify.read_mapping_stats", return_value=(100, 80)), \
+         patch("pipeline.quantify.read_allele_table", return_value=pd.DataFrame()), \
+         patch("pipeline.quantify.read_quant_window", return_value=pd.DataFrame()), \
+         patch("pipeline.quantify.find_het_position", return_value=([5], "C", "T")), \
+         patch("pipeline.quantify.quantify_oneseq_sample", return_value={"branch": "oneseq"}) as mock_oneseq, \
+         patch("pipeline.quantify.quantify_abe_sample", return_value={"branch": "abe"}) as mock_abe, \
+         patch("pipeline.quantify.quantify_het_sample", return_value={"branch": "het"}) as mock_het:
+        result = quantify_sample(config, sample_dir)
+
+    mock_het.assert_called_once()
+    mock_oneseq.assert_not_called()
+    mock_abe.assert_not_called()
+    assert result == {"branch": "het"}
+
+
+def test_dispatch_unknown_editor_FORCED_FAIL(tmp_path):
+    sample_dir = make_dummy_crispresso_output(tmp_path)
+    config = AmpliconConfig(
+        name="TEST", protospacer="A" * 20, editor="CBE",
+        orientation="F", amplicon="A" * 30, intended_edit=5,
+        tolerated_edits=[], note=""
+    )
+
+    with patch("pipeline.quantify.read_mapping_stats", return_value=(100, 80)), \
+         patch("pipeline.quantify.read_allele_table", return_value=pd.DataFrame()), \
+         patch("pipeline.quantify.read_quant_window", return_value=pd.DataFrame()), \
+         patch("pipeline.quantify.find_het_position", return_value=([], None, None)), \
+         patch("pipeline.quantify.quantify_oneseq_sample"), \
+         patch("pipeline.quantify.quantify_abe_sample"), \
+         patch("pipeline.quantify.quantify_het_sample"):
+        with pytest.raises(ValueError):
+            quantify_sample(config, sample_dir)

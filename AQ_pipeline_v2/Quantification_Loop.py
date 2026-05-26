@@ -44,6 +44,7 @@ def main():
             logging.error(f"Error processing {sample_dir.name}: {e}")  # something went wrong
             error_count += 1
 
+    abe_df = None
     for each in results_by_type:
         if results_by_type[each]:
             if each == "ABE":
@@ -56,14 +57,13 @@ def main():
                 oneseq_df.to_csv("ONESEQ_Quantification_Summary.csv", index=False)
             else:
                 raise ValueError(f"Unknown editor type")
-    while True:
-        make_prism = input("Would you like to generate a prism formated file? (y/n)")
-        if make_prism in ("yes", "no", "y", "n"):
-            break
-        print("Please enter (y/n)")
     if results_by_type["ABE"]:
+        while True:
+            make_prism = input("Would you like to generate a prism formated file? (y/n) ").strip().lower()
+            if make_prism in ("yes", "no", "y", "n"):
+                break
+            print("Please enter (y/n)")
         if make_prism == "y" or make_prism == "yes":
-            abe_df = pd.DataFrame(results_by_type["ABE"]).sort_values(by="sample")
             prism_df = generate_prism_csv(abe_df)
             prism_df.to_csv("Prism_Input.csv", index=False)
     logging.info(f"Samples processed correctly: {completed_count}")

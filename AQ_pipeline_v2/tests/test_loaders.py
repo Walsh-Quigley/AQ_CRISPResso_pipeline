@@ -11,7 +11,7 @@ def test_parse_single_row(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
-        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,TAGAGCAACAGT,min humanize,15,8\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,AAAAAGGCCCAGCAGAAATGCAGCGTTTTT,min humanize,15,8\n"
     )
     result = load_amplicon_list(csv_file)
     assert result[0].name == "R186W"
@@ -26,8 +26,8 @@ def test_parse_multiple_rows(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
-        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,TAGAGCAACAGT,note1,15,8\n"
-        "G542X,ATCGATCGATCGATCGATCG,ABE,F,GCTAGCTAGCTA,note2,3,5\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,AAAAAGGCCCAGCAGAAATGCAGCGTTTTT,note1,15,8\n"
+        "G542X,ATCGATCGATCGATCGATCG,ABE,F,AAAAAATCGATCGATCGATCGATCGTTTTT,note2,3,5\n"
     )
     result = load_amplicon_list(csv_file)
     assert len(result) == 2
@@ -38,7 +38,7 @@ def test_parse_multiple_tolerated_edits_spaces(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
-        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,TAGAGCAACAGT,note,4 7 15,8\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,AAAAAGGCCCAGCAGAAATGCAGCGTTTTT,note,4 7 15,8\n"
     )
     result = load_amplicon_list(csv_file)
     assert result[0].tolerated_edits == [4, 7, 15]
@@ -47,7 +47,7 @@ def test_parse_multiple_tolerated_edits_commas(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
-        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,TAGAGCAACAGT,note,\"4, 7, 15\",8\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,AAAAAGGCCCAGCAGAAATGCAGCGTTTTT,note,\"4, 7, 15\",8\n"
     )
     result = load_amplicon_list(csv_file)
     assert result[0].tolerated_edits == [4, 7, 15]
@@ -56,7 +56,7 @@ def test_parse_multiple_tolerated_edits_mix(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
-        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,TAGAGCAACAGT,note,\"4, 7 15\",8\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,AAAAAGGCCCAGCAGAAATGCAGCGTTTTT,note,\"4, 7 15\",8\n"
     )
     result = load_amplicon_list(csv_file)
     assert result[0].tolerated_edits == [4, 7, 15]
@@ -65,7 +65,7 @@ def test_parse_multiple_tolerated_edits_misentered_FORCED_FAIL(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
-        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,TAGAGCAACAGT,note,4, 7, 15,8\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,AAAAAGGCCCAGCAGAAATGCAGCGTTTTT,note,4, 7, 15,8\n"
     )
     with pytest.raises(ValueError):
         result = load_amplicon_list(csv_file)
@@ -74,7 +74,7 @@ def test_parse_empty_tolerated_edits(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
-        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,TAGAGCAACAGT,note,,8\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,AAAAAGGCCCAGCAGAAATGCAGCGTTTTT,note,,8\n"
     )
     result = load_amplicon_list(csv_file)
     assert result[0].tolerated_edits == []
@@ -83,11 +83,60 @@ def test_parse_invalid_intended_edit_FORCED_FAIL(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
-        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,TAGAGCAACAGT,note,15,INVALID\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,AAAAAGGCCCAGCAGAAATGCAGCGTTTTT,note,15,INVALID\n"
     )
     with pytest.raises(ValueError):
         load_amplicon_list(csv_file)
 
+def test_duplicate_name_FORCE_FAIL(tmp_path):
+    csv_file = tmp_path / "amplicon_list.csv"
+    csv_file.write_text(
+        "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,AAAAAGGCCCAGCAGAAATGCAGCGTTTTT,note1,15,8\n"
+        "R186W,ATCGATCGATCGATCGATCG,ABE,F,AAAAAATCGATCGATCGATCGATCGTTTTT,note2,3,5\n"
+    )
+    with pytest.raises(ValueError):
+        load_amplicon_list(csv_file)
+
+def test_non_nt_base_in_amplicon_FORCE_FAIL(tmp_path):
+    csv_file = tmp_path / "amplicon_list.csv"
+    csv_file.write_text(
+        "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,TAGAGXAACAGT,note1,15,8\n"
+        "R186W,ATCGATCGATCGATCGATCG,ABE,F,GCTAGXTAGCTA,note2,3,5\n"
+    )
+    with pytest.raises(ValueError):
+        load_amplicon_list(csv_file)
+
+def test_non_nt_base_in_proto_FORCE_FAIL(tmp_path):
+    csv_file = tmp_path / "amplicon_list.csv"
+    csv_file.write_text(
+        "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
+        "R186W,CGCTGCATTTXTGCTGGGCC,ABE,R,TAGAGAAACAGT,note1,15,8\n"
+        "R186W,ATCGATCGATXGATCGATCG,ABE,F,GCTAGATAGCTA,note2,3,5\n"
+    )
+    with pytest.raises(ValueError):
+        load_amplicon_list(csv_file)
+
+def test_invalid_orientation_FORCED_FAIL(tmp_path):
+    csv_file = tmp_path / "amplicon_list.csv"
+    csv_file.write_text(
+        "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
+        "R186W,CGCTGCATTTTTGCTGGGCC,ABE,X,TAGAGGAACAGT,note1,15,8\n"
+        "R186W,ATCGATCGATTGATCGATCG,ABE,fr,GCTAGGTAGCTA,note2,3,5\n"
+    )
+    with pytest.raises(ValueError):
+        load_amplicon_list(csv_file)
+
+def test_protospacer_not_in_amplicon_FORCED_FAIL(tmp_path):
+    csv_file = tmp_path / "amplicon_list.csv"
+    csv_file.write_text(
+        "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,F,TAGAGGAACAGT,note1,15,8\n"
+        "R186W,ATCGATCGATCGATCGATCG,ABE,R,GCTAGGTAGCTA,note2,3,5\n"
+    )
+    with pytest.raises(ValueError):
+        load_amplicon_list(csv_file)
 def test_read_mapping_stats(tmp_path):
     stats_file = tmp_path / "CRISPResso_mapping_statistics.txt"
     stats_file.write_text(

@@ -12,6 +12,7 @@ def generate_prism_csv(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: a newly formatted dataframe
     Raises:
         ValueError: if the sample column is missing from the input DataFrame
+        ValueError: if more than 3 replicates are detected
 
     """
     df = df.dropna(how="all")
@@ -29,6 +30,11 @@ def generate_prism_csv(df: pd.DataFrame) -> pd.DataFrame:
         missing = dfcopy.loc[dfcopy["rep"].isna(), "sample"].tolist()
         logging.warning(f"Could not extract rep number from samples: {missing}")
     dfcopy["rep"] = dfcopy["rep"].fillna("1")
+    
+    unique_reps = dfcopy["rep"].unique()
+    if len(unique_reps) > 3:
+        raise ValueError(f"Prism export currently supports up to 3 replicates, got {len(unique_reps)}")
+
 
     dfcopy["base_sample"] = dfcopy["sample"].str.replace(r'[-_]\d+$', '', regex=True)
 

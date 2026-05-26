@@ -2,6 +2,8 @@ import csv
 import logging
 from pathlib import Path
 from config import AmpliconConfig
+from utils.sequences import reverse_complement
+
 
 # io/amplicon_list.py
 # Reads and validates amplicon_list.sv, returns list of AmpliconConfig objects
@@ -15,15 +17,22 @@ def load_amplicon_list(path: Path) -> list[AmpliconConfig]:
     Returns:
         list[AmpliconConfig]: a list of AmpliconConfig objects
     Raises:
+        ValueError: if there are duplicate amplicon names in the list
         ValueError: if there are too many columns in the amplicon_list.csv
         ValueError: if there is a non-digit in the intended_edit column (excluding "ONESEQ")
+        ValueError: if there are conflicting editor implications within amplicon_list.csv
     """
     configs = []
 
     with open(path, newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
+        seen_names = set()
         for row in reader:
             name = row["name"].strip()
+
+            if name in seen_names:
+                raise ValueError(f"Duplicate amplicon name '{name}' in {path}")
+            seen_names.add(name)
 
             if row.get(None):
                 raise ValueError(
@@ -34,8 +43,22 @@ def load_amplicon_list(path: Path) -> list[AmpliconConfig]:
             protospacer = row["protospacer_or_PEG"].strip().upper()
             editor = row["editor"].strip().upper()
             orientation = row["guide_orientation_relative_to_amplicon"].strip().upper()
+            if orientation not in ("F", "R"):
+                raise ValueError(f"Orientation for '{name}' must be 'F' or 'R', got '{orientation}'")
             amplicon = row["amplicon"].strip().upper()
             note = row.get("note","").strip()
+
+            invalid_protospacer = set(protospacer) - {"A","C","G","T"}
+            if invalid_protospacer:
+                raise ValueError(f"Protospacer for '{name}' contains non-DNA characters: {invalid_protospacer}"
+)
+
+            invalid_amplicon = set(amplicon) - {"A","C","G","T"}
+            if invalid_amplicon:
+                raise ValueError(f"Amplicon for '{name}' contains non-DNA characters: {invalid_amplicon}")
+            
+            if protospacer not in amplicon and reverse_complement(protospacer) not in amplicon:
+                raise ValueError(f"Protospacer for '{name}' (or its reverse complement) not found in the amplicon sequence — check for swapped rows or typos.")
 
             if len(amplicon) < len(protospacer):
                 logging.warning(f"Amplicon for '{name}' is shorter than its protospacer — check your amplicon_list.")

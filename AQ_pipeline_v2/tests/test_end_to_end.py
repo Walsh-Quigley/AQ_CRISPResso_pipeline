@@ -18,8 +18,8 @@ def test_load_amplicon_list_UNTIL_generate_search_sequences(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
-        "PAH1,TCACAGTTCGGGGGTATACA,ABE,F,XXXXX,P281L Hexa,3 16,5\n"
-        "R186W,CAGCAGCCACTCAGAGTCTC,ABE,R,XXXXX,note,13,9\n"
+        "PAH1,TCACAGTTCGGGGGTATACA,ABE,F,GGGGGTCACAGTTCGGGGGTATACAGGGGG,P281L Hexa,3 16,5\n"
+        "R186W,CAGCAGCCACTCAGAGTCTC,ABE,R,GGGGGCAGCAGCCACTCAGAGTCTCGGGGG,note,13,9\n"
     )
     amplicon_list_object = load_amplicon_list(csv_file)
     
@@ -40,8 +40,8 @@ def test_load_amplicon_list_UNTIL_calcualte_correction(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
-        "PAH1,TCACAGTTCGGGGGTATACA,ABE,F,XXXXX,P281L Hexa,3 16,5\n"
-        "R186W,CAGCAGCCACTCAGAGTCTC,ABE,R,XXXXX,note,13,9\n"
+        "PAH1,TCACAGTTCGGGGGTATACA,ABE,F,GGGGGTCACAGTTCGGGGGTATACAGGGGG,P281L Hexa,3 16,5\n"
+        "R186W,CAGCAGCCACTCAGAGTCTC,ABE,R,GGGGGCAGCAGCCACTCAGAGTCTCGGGGG,note,13,9\n"
     )
 
     table1 = pd.DataFrame({
@@ -76,8 +76,8 @@ def test_load_amplicon_list_UNTIL_calcualte_protospacer_metrics(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
-        "PAH1,TCACAGTTCGGGGGTATACA,ABE,F,XXXXX,P281L Hexa,3 16,5\n"
-        "R186W,CAGCAGCCACTCAGAGTCTC,ABE,R,XXXXX,note,13,9\n"
+        "PAH1,TCACAGTTCGGGGGTATACA,ABE,F,GGGGGTCACAGTTCGGGGGTATACAGGGGG,P281L Hexa,3 16,5\n"
+        "R186W,CAGCAGCCACTCAGAGTCTC,ABE,R,GGGGGCAGCAGCCACTCAGAGTCTCGGGGG,note,13,9\n"
     )
 
     table1 = pd.DataFrame({
@@ -134,8 +134,8 @@ def test_load_amplicon_list_UNTIL_calcualte_het_metrics_reverse(tmp_path):
 
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
-        "PAH1,TCACAGTTCGGGGGTATACA,ABE,F,XXXXX,P281L Hexa,3,5\n"
-        "R186W,CAGCAGCCACTCAGAGTCTC,ABE,R,XXXXX,note,13,9\n"
+        "PAH1,TCACAGTTCGGGGGTATACA,ABE,F,GGGGGTCACAGTTCGGGGGTATACAGGGGG,P281L Hexa,3,5\n"
+        "R186W,CAGCAGCCACTCAGAGTCTC,ABE,R,GGGGGCAGCAGCCACTCAGAGTCTCGGGGG,note,13,9\n"
     )
 
     Quantification_window1 = tmp_path / "PAH1_dir" / "CRISPResso_on_sample" / "Quantification_window_nucleotide_percentage_table.txt"
@@ -239,8 +239,8 @@ def test_non_het_ABE_end_to_end(tmp_path):
 
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
-        "PAH1,TCACAGTTCGGGGGTATACA,ABE,F,XXXXX,P281L Hexa,3,5\n"
-        "R186W,CAGCAGCCACTCAGAGTCTC,ABE,R,XXXXX,note,13,9\n"
+        "PAH1,TCACAGTTCGGGGGTATACA,ABE,F,GGGGGTCACAGTTCGGGGGTATACAGGGGG,P281L Hexa,3,5\n"
+        "R186W,CAGCAGCCACTCAGAGTCTC,ABE,R,GGGGGCAGCAGCCACTCAGAGTCTCGGGGG,note,13,9\n"
     )
 
     

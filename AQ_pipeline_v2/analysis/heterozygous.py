@@ -1,5 +1,6 @@
 import pandas as pd
 from utils.sequences import reverse_complement
+import logging
 
 # Detects heterozygous positions and splits allele tables per allele
 
@@ -45,22 +46,42 @@ def calculate_het_correction(allele_table_df: pd.DataFrame,
         base2: nt at primary het_pos for allele 2
     Returns:
         A dictionary containing corrections with bystanders and without bystanders broken up by allele
+    Note:
+        it is of note that reads_w_baseX are "reads with tolerated bystanders for base X". It is NOT "read with base X"
     """
     
     primary_het_pos = het_pos[0]
-    base1_mask = allele_table_df["Aligned_Sequence"].str[primary_het_pos] == base1
-    base2_mask = allele_table_df["Aligned_Sequence"].str[primary_het_pos] == base2
+    total_reads_base1, total_reads_base2 = 0, 0
+    reads_wo_base1, reads_wo_base2 = 0, 0
+    reads_w_base1, reads_w_base2 = 0, 0
+    alignment_shift_reads_pct = 0.0
 
-    total_reads_base1 = allele_table_df[base1_mask]["%Reads"].sum()
-    total_reads_base2 = allele_table_df[base2_mask]["%Reads"].sum()
-
-    any_match_mask = allele_table_df["Aligned_Sequence"].isin(search_seqs)
-    reads_w_base1 = allele_table_df[base1_mask & any_match_mask]["%Reads"].sum()
-    reads_w_base2 = allele_table_df[base2_mask & any_match_mask]["%Reads"].sum()
-
-    without_bystanders_match = allele_table_df["Aligned_Sequence"] == search_seqs[0]
-    reads_wo_base1 = allele_table_df[base1_mask & without_bystanders_match]["%Reads"].sum()
-    reads_wo_base2 = allele_table_df[base2_mask & without_bystanders_match]["%Reads"].sum()
+    for _, row in allele_table_df.iterrows():
+        if len(row["Aligned_Sequence"]) != len(search_seqs[0]):
+            alignment_shift_reads_pct += row["%Reads"]
+            continue
+        if row["Aligned_Sequence"][primary_het_pos] == base1:
+            total_reads_base1 += row["%Reads"]
+            if row["Aligned_Sequence"] in search_seqs:
+                reads_w_base1 += row["%Reads"]
+            if row["Aligned_Sequence"] == search_seqs[0]:
+                reads_wo_base1 += row["%Reads"]
+        elif row["Aligned_Sequence"][primary_het_pos] == base2:
+            total_reads_base2 += row["%Reads"]
+            if row["Aligned_Sequence"] in search_seqs:
+                reads_w_base2 += row["%Reads"]
+            if row["Aligned_Sequence"] == search_seqs[0]:
+                reads_wo_base2 += row["%Reads"]
+        else:
+            continue
+    
+    if alignment_shift_reads_pct > 3:
+        logging.warning(
+            f"Skipped {alignment_shift_reads_pct:.2f}% of reads with alignment shifts "
+            f"(likely insertions in/near the protospacer region). "
+            f"These reads cannot be reliably analyzed for per-protospacer metrics."
+        )
+            
 
     pct_wo_base1 = ((reads_wo_base1 / total_reads_base1) * 100)  if total_reads_base1 > 0 else 0.0
     pct_wo_base2 = ((reads_wo_base2 / total_reads_base2) * 100)  if total_reads_base2 > 0 else 0.0
@@ -68,10 +89,10 @@ def calculate_het_correction(allele_table_df: pd.DataFrame,
     pct_w_base2 = ((reads_w_base2 / total_reads_base2) * 100)  if total_reads_base2 > 0 else 0.0
 
     resultsDict = {
-    "correction_wo_bystanders_allele1": pct_wo_base1,
-    "correction_w_bystanders_allele1": pct_w_base1,
-    "correction_w_bystanders_allele2": pct_w_base2,
-    "correction_wo_bystanders_allele2": pct_wo_base2,
+        "correction_wo_bystanders_allele1": pct_wo_base1,
+        "correction_w_bystanders_allele1": pct_w_base1,
+        "correction_w_bystanders_allele2": pct_w_base2,
+        "correction_wo_bystanders_allele2": pct_wo_base2,
     }
 
     return resultsDict
@@ -108,10 +129,16 @@ def calculate_het_protospacer_metrics(allele_table: pd.DataFrame,
     total_reads_base1 = 0
     total_reads_base2 = 0
 
+    alignment_shift_reads_pct = 0.0
+
+
     rc_protospacer = reverse_complement(protospacer)
 
     primary_het_position = het_pos[0]
     for _, row in allele_table.iterrows():
+        if len(row["Aligned_Sequence"]) != len(protospacer):
+            alignment_shift_reads_pct += row["%Reads"]
+            continue
         if orientation == "F":
             if row["Aligned_Sequence"][primary_het_position] == base1:
                 total_reads_base1 += row["%Reads"]
@@ -177,6 +204,13 @@ def calculate_het_protospacer_metrics(allele_table: pd.DataFrame,
         else:
             raise ValueError(f"orientation must be 'F' or 'R', got '{orientation}'")
     
+    if alignment_shift_reads_pct > 3:
+        logging.warning(
+            f"Skipped {alignment_shift_reads_pct:.2f}% of reads with alignment shifts "
+            f"(likely insertions in/near the protospacer region). "
+            f"These reads cannot be reliably analyzed for per-protospacer metrics."
+        )
+
     AtoG_base1 = ((any_AtoG_change_in_protospacer_base1 / total_reads_base1) * 100) if total_reads_base1 > 0 else 0.0
     AtoG_base2 = ((any_AtoG_change_in_protospacer_base2 / total_reads_base2) * 100) if total_reads_base2 > 0 else 0.0
     any_change_base_1 = ((any_change_in_protospacer_base1 / total_reads_base1) * 100) if total_reads_base1 > 0 else 0.0
