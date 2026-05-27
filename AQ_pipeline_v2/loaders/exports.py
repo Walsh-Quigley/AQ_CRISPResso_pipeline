@@ -1,7 +1,7 @@
 import pandas as pd
 import logging
 
-#Prism input generator function
+#translates Quantification_Summary into wide format for GraphPad Prism
 
 def generate_prism_csv(df: pd.DataFrame) -> pd.DataFrame:
     """Translates the Quantification_Summary dataframe into a format that is acceptable by

@@ -2,13 +2,24 @@ import pandas as pd
 from utils.sequences import reverse_complement
 from pathlib import Path
 import gzip
-from utils.sequences import reverse_complement
+
 
 def make_quant_window(protospacer: str, 
                       orientation: str,
                       intended_edit: tuple = None,
                       tolerated_edits: list[tuple] = None,
                       het_positions: list[tuple] = None) -> pd.DataFrame:
+    """helper function for tests, creates a quant window with passed through parameters
+    Args:
+        protospacer: protospacer for the quant window
+        orientation: forward or reverse
+        intended_edit: (position, from_base, to_base)
+        tolerated_edits: list[(position, from_base, to_base)]
+        het_positions: het positions and bases
+    Returns:
+        returns a quant window with given parameters
+    Raises:
+        ValueError: non-A/C/G/T base found"""
     
 
     if orientation == "R":
@@ -47,7 +58,7 @@ def make_quant_window(protospacer: str,
         elif c == "T":
             tmp_list[3] = .94
         else:
-            print("you broke it")
+            raise ValueError(f"Non-nt base found, found {c}")
         data[str(idx + 1)] = tmp_list
 
     if intended_edit is not None:
@@ -73,9 +84,22 @@ def make_fastq_gz(path: str | Path,
                   protospacer: str,
                   n_reads: int,
                   outcomes: dict[str, tuple[float, list[tuple[int, str, str]]]]) -> None:
-    
+    """helper function for tests, makes a fastq file with given parameters, all reads
+    in the format of 60 As + protospacer with paremeter changes + remaining 151 number of As
+    Args:
+        path: location for the fastq file to reside
+        protospacer: the protospacer used to create the fastq entries
+        n_reads: number of total reads in the fastq file
+        outcomes:
+            outcomes: dict mapping outcome_name → (fraction, edits) where
+                fraction is a float (portion of n_reads),
+                edits is a list of (position, from_base, to_base) tuples 
+                    (position is 0-indexed within the protospacer)
+    Returns:
+        None
+    """
     protospacer_offset = 60
-    right_pad = 151 - protospacer_offset - len(protospacer)
+    right_pad = 151 - protospacer_offset - len(protospacer) #151 is the illumina read length
 
     amplicon = ("A" * protospacer_offset + protospacer + "A" * right_pad)
     read_counter = 0
@@ -92,7 +116,13 @@ def make_fastq_gz(path: str | Path,
                 f.write(f"{'I' * len(edited_amplicon)}\n")
                 read_counter += 1
                 
-def make_dummy_crispresso_output(tmp_path):
+def make_dummy_crispresso_output(tmp_path: Path):
+    """helper function for tests, makes a mock directory for dispatch testing, files have placeholder contents
+    that is meaningless
+    Args:
+        tmp_path: pytest's tmp_path fixture (or any Path)
+    Returns:
+        returns a sample_dir path"""
     sample_dir = tmp_path / "sample"
     crispresso_sub = sample_dir / "CRISPResso_on_sample"
     crispresso_sub.mkdir(parents=True)

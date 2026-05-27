@@ -6,7 +6,7 @@ from utils.sequences import reverse_complement
 
 
 # io/amplicon_list.py
-# Reads and validates amplicon_list.sv, returns list of AmpliconConfig objects
+# Reads and validates amplicon_list.csv, returns list of AmpliconConfig objects
 # One AmpliconConfig is created per row. Raises ValueError on missing or invalid data
 
 def load_amplicon_list(path: Path) -> list[AmpliconConfig]:
@@ -17,10 +17,7 @@ def load_amplicon_list(path: Path) -> list[AmpliconConfig]:
     Returns:
         list[AmpliconConfig]: a list of AmpliconConfig objects
     Raises:
-        ValueError: if there are duplicate amplicon names in the list
-        ValueError: if there are too many columns in the amplicon_list.csv
-        ValueError: if there is a non-digit in the intended_edit column (excluding "ONESEQ")
-        ValueError: if there are conflicting editor implications within amplicon_list.csv
+        ValueError: if editor is ONESEQ but intended_edit is a numeric position
     """
     configs = []
 
@@ -50,8 +47,7 @@ def load_amplicon_list(path: Path) -> list[AmpliconConfig]:
 
             invalid_protospacer = set(protospacer) - {"A","C","G","T"}
             if invalid_protospacer:
-                raise ValueError(f"Protospacer for '{name}' contains non-DNA characters: {invalid_protospacer}"
-)
+                raise ValueError(f"Protospacer for '{name}' contains non-DNA characters: {invalid_protospacer}")
 
             invalid_amplicon = set(amplicon) - {"A","C","G","T"}
             if invalid_amplicon:
@@ -70,8 +66,6 @@ def load_amplicon_list(path: Path) -> list[AmpliconConfig]:
                 intended_edit = int(intended_edit_raw)
             else:
                 raise ValueError(f"Invalid intended_edit value '{row['intended_edit']}' for amplicon '{name}'")
-            if intended_edit == "ONESEQ" and editor != "ONESEQ":
-                raise ValueError(f"Amplicon '{name}' has intended_edit=ONE-SEQ but editor is '{editor}' — set editor to ONESEQ.")
             if editor == "ONESEQ" and intended_edit != "ONESEQ":
                 raise ValueError(f"Amplicon '{name}' has editor=ONESEQ but intended_edit is '{intended_edit}' — set intended_edit to ONE-SEQ.")
 
@@ -96,14 +90,14 @@ def load_amplicon_list(path: Path) -> list[AmpliconConfig]:
     return configs
 
 def find_amplicon_list(search_dir: Path = Path(".")) -> Path:
-    """Parse through user's project direcotry for potential amplicon_list.csv
+    """Parse through user's project directory for potential amplicon_list.csv
     Args:
         search_dir: the directory path to search within, set to the current directory by default
     Returns:
         Path: a path to the amplicon_list.csv itself
     Raises:
         FileNotFoundError: if no file containing 'amplicon_list' is found.
-        ValueError: if multiple files containing 'amplicon_list" are found.
+        ValueError: if multiple files containing 'amplicon_list' are found.
     """
     found_lists = 0
     found_names = []
@@ -114,7 +108,7 @@ def find_amplicon_list(search_dir: Path = Path(".")) -> Path:
             found_names.append(file.name)
             to_be_returned = file
     if found_lists == 0:
-        raise FileNotFoundError(f"No file containing 'amplicon_list' found in {Path('.').resolve()}")
+        raise FileNotFoundError(f"No file containing 'amplicon_list' found in {search_dir.resolve()}")
     elif found_lists == 1:
         return to_be_returned
     elif found_lists > 1:

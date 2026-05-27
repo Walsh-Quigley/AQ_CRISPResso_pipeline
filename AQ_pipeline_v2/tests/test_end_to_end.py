@@ -9,9 +9,9 @@ from loaders.crispresso_output import read_allele_table, read_mapping_stats
 from tests.helper import make_quant_window
 from pipeline.quantify import quantify_sample
 
-# Full pipeline test using sample data
+
 """Tests end to end workflow of the pipeline - from load amplicon list to generate search
-sequences, load amplicon list to calcualte correction, load amplicon list to calculate 
+sequences, load amplicon list to calculate correction, load amplicon list to calculate 
 protospacer metric"""
 
 def test_load_amplicon_list_UNTIL_generate_search_sequences(tmp_path):
@@ -36,7 +36,7 @@ def test_load_amplicon_list_UNTIL_generate_search_sequences(tmp_path):
     assert result1 == ["TCACGGTTCGGGGGTATACA", "TCGCGGTTCGGGGGTATACA", "TCACGGTTCGGGGGTGTACA", "TCGCGGTTCGGGGGTGTACA"]
     assert result2 == ["GAGACTCTGAGCGGCTGCTG", "GAGACTCCGAGCGGCTGCTG"]
 
-def test_load_amplicon_list_UNTIL_calcualte_correction(tmp_path):
+def test_load_amplicon_list_UNTIL_calculate_correction(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
@@ -72,7 +72,7 @@ def test_load_amplicon_list_UNTIL_calcualte_correction(tmp_path):
     assert result1 == (10.0, 60.0)
     assert result2 == (10.0, 30.0)
 
-def test_load_amplicon_list_UNTIL_calcualte_protospacer_metrics(tmp_path):
+def test_load_amplicon_list_UNTIL_calculate_protospacer_metrics(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
@@ -125,7 +125,7 @@ def test_load_amplicon_list_UNTIL_calcualte_protospacer_metrics(tmp_path):
     assert result2_with_without == (10.0, 25.0)
     assert result2_AtoG_anychange == (45.0, 70.0)
 
-def test_load_amplicon_list_UNTIL_calcualte_het_metrics_reverse(tmp_path):
+def test_load_amplicon_list_UNTIL_calculate_het_metrics_reverse(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     CRISPResso_mapping_statistic1 = tmp_path / "PAH1_dir" / "CRISPResso_on_sample" / "CRISPResso_mapping_statistics.txt" 
     CRISPResso_mapping_statistic2 = tmp_path / "R186W_dir" / "CRISPResso_on_sample" / "CRISPResso_mapping_statistics.txt" 

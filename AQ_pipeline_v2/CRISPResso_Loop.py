@@ -3,7 +3,7 @@ from pathlib import Path
 from loaders.amplicon_list import load_amplicon_list, find_amplicon_list
 from pipeline.crispresso import identify_amplicon, run_crispresso
 
-#Entry point for the CRISPResso loop, main logic to start the sequence of calls
+#Entry point for the CRISPResso loop
 
 
 log_dir = Path("logs")
@@ -12,7 +12,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(message)s",
     handlers=[
-        logging.StreamHandler(),                        # terminal
+        logging.StreamHandler(),                        #  log to terminal
         logging.FileHandler(log_dir / "crispresso_loop.log"),
     ]
 )
@@ -37,7 +37,7 @@ def main():
             logging.info(f"Done: {sample_dir.name}")
             completed_count += 1
         except Exception as e:
-            logging.error(f"Error processing {sample_dir.name}: {e}")  # something went wrong
+            logging.error(f"Error processing {sample_dir.name}: {e}") 
             error_count += 1
     
     logging.info(f"Samples processed correctly: {completed_count}")

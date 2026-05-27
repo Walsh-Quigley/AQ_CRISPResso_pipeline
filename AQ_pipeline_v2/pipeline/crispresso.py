@@ -8,12 +8,7 @@ import logging
 #stage 1 -> finds FASTQs, matches each to an amplicon config, runs CRISPResso
 
 def by_name_length(config) -> int:
-    """calculates an amplicon's name's length
-    Args:
-        config: an amplicon object
-    Returns:
-        int: length of the name of an amplicon as an integer
-    """
+    """Sort key - return the length of the amplicon's name"""
     return len(config.name)
 
 def pair_fastq_files(fastq_files: list[str]) -> tuple[str, str]:
@@ -32,7 +27,7 @@ def pair_fastq_files(fastq_files: list[str]) -> tuple[str, str]:
         read2 = r2_files[0]
     else:
         raise ValueError(f"could not unambiguously identify R1/R2 in {fastq_files}")
-    return(read1, read2)
+    return read1, read2
 
 
 def identify_amplicon(directory_name: str, amplicon_configs: list[AmpliconConfig]) -> AmpliconConfig:
@@ -93,12 +88,12 @@ def run_crispresso(amplicon_list_row: AmpliconConfig, sample_dir: Path) -> None:
     cmd = [
         'CRISPResso',
         *fastq_cmd_section,
-        '--amplicon_seq', amplicon_list_row.amplicon,
-        '--guide_seq', amplicon_list_row.protospacer,
-        '--output_folder', str(sample_dir),
-        '--plot_window_size', str((len(amplicon_list_row.protospacer) + 1) // 2),
-        '--quantification_window_center', str(-len(amplicon_list_row.protospacer) //2),
-        '--quantification_window_size', str((len(amplicon_list_row.protospacer)+1)//2),
+        '--amplicon_seq', amplicon_list_row.amplicon, #amplicon sequence from amplicon config object
+        '--guide_seq', amplicon_list_row.protospacer, #protospacer sequence from amplicon config object
+        '--output_folder', str(sample_dir), #output folder for the crispresso run
+        '--plot_window_size', str((len(amplicon_list_row.protospacer) + 1) // 2), # radius of the plot window (what shows in the allele table), set to half the protospacer length
+        '--quantification_window_center', str(-len(amplicon_list_row.protospacer) // 2), # center of the quantification window, relative to the cut site — set to land in the middle of the protospacer
+        '--quantification_window_size', str((len(amplicon_list_row.protospacer)+1) // 2), #radius of the quantification windo, set to be half the size of the protospacer
     ]    
 
     subprocess.run(cmd, check=True)

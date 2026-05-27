@@ -14,7 +14,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(message)s",
     handlers=[
-        logging.StreamHandler(),                        # terminal
+        logging.StreamHandler(),                        #log toterminal
         logging.FileHandler(log_dir / "quantification_loop.log"),
     ]
 )
@@ -41,7 +41,7 @@ def main():
             logging.info(f"Done: {sample_dir.name}")
             completed_count += 1
         except Exception as e:
-            logging.error(f"Error processing {sample_dir.name}: {e}")  # something went wrong
+            logging.error(f"Error processing {sample_dir.name}: {e}")
             error_count += 1
 
     abe_df = None

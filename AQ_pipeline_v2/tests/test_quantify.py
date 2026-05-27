@@ -6,8 +6,10 @@ from unittest.mock import patch
 import pandas as pd
 from tests.helper import make_dummy_crispresso_output
 
-"""Tests for pipeline/quantify.py - covers quantify sample, missing CRISPResso_subfolder
-forced fail, and multiple allele frequency tables forced fail"""
+"""Tests for pipeline/quantify.py - covers end-to-end quantify_sample with mock 
+CRISPResso outputs, missing CRISPResso subfolder forced fail, multiple allele 
+tables forced fail, and dispatch routing tests (ONESEQ, ABE non-het, ABE het, 
+unknown editor forced fail)."""
 
 
 

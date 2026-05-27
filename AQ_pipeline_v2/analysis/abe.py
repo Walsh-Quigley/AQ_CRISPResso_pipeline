@@ -10,13 +10,13 @@ def calculate_correction(allele_table: pd.DataFrame,
         percentage for perfect correction and correction with tolerated bystanders
     Args:
         allele_table: dataframe containing read data for a given sample's allele 
-            freqency table
+            frequency table
         search_sequences: list of sequences that are used for exact 
             match (search_sequences[0]) and matches with tolerated 
             bystanders (search_sequences[1:])
     Returns:
         tuple[float, float]: a tuple containing perfect correction percentage and
-            tolerated correction percentage respectivly"""
+            tolerated correction percentage respectively"""
 
     exact_match_mask = allele_table["Aligned_Sequence"] == search_sequences[0]
     pct_without_bystanders = allele_table[exact_match_mask]["%Reads"].sum()
@@ -40,7 +40,7 @@ def calculate_protospacer_metrics(allele_table: pd.DataFrame,
         orientation: the user's protospacer's orientation relative to the amplicon
     Returns:
         tuple[float, float]: a tuple containing correction percentage with any A to G 
-        change and correction percentage with any change in protospacer respectivly.
+        change and correction percentage with any change in protospacer respectively.
     Raises:
         ValueError: orientation is neither forward or reverse
     """
@@ -52,7 +52,7 @@ def calculate_protospacer_metrics(allele_table: pd.DataFrame,
     for _, row in allele_table.iterrows():
         if len(row["Aligned_Sequence"]) != len(protospacer):
             alignment_shift_reads_pct += row["%Reads"]
-            continue    
+            continue
         if orientation == "F":
             if row["Aligned_Sequence"][intended_edit-1] == "G":
                 any_change_in_protospacer += row["%Reads"]
@@ -85,4 +85,4 @@ def calculate_protospacer_metrics(allele_table: pd.DataFrame,
             f"These reads cannot be reliably analyzed for per-protospacer metrics."
         )
 
-    return(any_AtoG_change_in_protospacer, any_change_in_protospacer,)
+    return any_AtoG_change_in_protospacer, any_change_in_protospacer

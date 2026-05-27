@@ -4,9 +4,9 @@ from config import AmpliconConfig
 
 
 """Tests for pipeline/crispresso - covers amplicon matching, longest first priority,
-stripping random suffixs, and no matches being found"""
+stripping random suffixes, paired fastq files, and no matches being found"""
 
-def test_basic_amplicon_match(tmp_path):
+def test_basic_amplicon_match():
     configs = [
         AmpliconConfig(name="PAH1", protospacer="AAAAAAAAAAAAAAAAAAAA", editor="ABE",
                        orientation="F", amplicon="AAAA", intended_edit=5,
@@ -15,7 +15,7 @@ def test_basic_amplicon_match(tmp_path):
     result = identify_amplicon("Icosa03_PAH1_UTD_1", configs)
     assert result == configs[0]
 
-def test_case_insensitive_match(tmp_path):
+def test_case_insensitive_match():
     configs = [
         AmpliconConfig(name="PAH1", protospacer="AAAAAAAAAAAAAAAAAAAA", editor="ABE",
                        orientation="F", amplicon="AAAA", intended_edit=5,
@@ -24,7 +24,7 @@ def test_case_insensitive_match(tmp_path):
     result = identify_amplicon("Icosa03_pah1_UTD_1", configs)
     assert result == configs[0]
 
-def test_longest_first_priority(tmp_path):
+def test_longest_first_priority():
     configs = [
         AmpliconConfig(name="PAH", protospacer="TTTTTTTTTTTTTTTTTTTT", editor="ABE",
                        orientation="F", amplicon="TTTT", intended_edit=4,
@@ -36,7 +36,7 @@ def test_longest_first_priority(tmp_path):
     result = identify_amplicon("Icosa03_pah_UTD_1", configs)
     assert result == configs[0]
 
-def test_striping_random_suffix(tmp_path):
+def test_stripping_random_suffix():
     configs = [
         AmpliconConfig(name="PAH", protospacer="TTTTTTTTTTTTTTTTTTTT", editor="ABE",
                        orientation="F", amplicon="TTTT", intended_edit=4,
@@ -48,7 +48,7 @@ def test_striping_random_suffix(tmp_path):
     result = identify_amplicon("Icosa03_pah_UTD_1.PAH1PAH1PAH1", configs)
     assert result == configs[0]
 
-def test_no_match_forced_fail(tmp_path):
+def test_no_match_FORCED_FAIL():
     configs = [
         AmpliconConfig(name="PAH", protospacer="TTTTTTTTTTTTTTTTTTTT", editor="ABE",
                        orientation="F", amplicon="TTTT", intended_edit=4,
@@ -81,8 +81,8 @@ def test_pair_two_R1s_FORCED_FAIL():
         pair_fastq_files(["Sample_R1.fastq.gz", "Sample_R1_resequenced.fastq.gz"])
 
 def test_pair_two_R2s_FORCED_FAIL():
-   with pytest.raises(ValueError):
-       pair_fastq_files(["Sample_R2.fastq.gz", "Sample_R2_resequenced.fastq.gz"])
+    with pytest.raises(ValueError):
+        pair_fastq_files(["Sample_R2.fastq.gz", "Sample_R2_resequenced.fastq.gz"])
 
 def test_pair_no_markers_FORCED_FAIL():
     with pytest.raises(ValueError):

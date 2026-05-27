@@ -11,7 +11,7 @@ from analysis.heterozygous import calculate_het_correction, calculate_het_protos
 
 
 # Stage 2 -> parses CRISPResso outputs, calls analysis modules,
-# assembles final reasult
+# assembles final result
 def quantify_abe_sample(amplicon_row: AmpliconConfig, 
                         sample_name: str,
                         allele_table_df: pd.DataFrame,
@@ -21,11 +21,11 @@ def quantify_abe_sample(amplicon_row: AmpliconConfig,
     Args:
         amplicon_row: the AmpliconConfig object for the given CRISPResso sample
         sample_name: name of the CRISPResso sample
-        allele_table_df: the dataframe containing the allele frequecy table information
+        allele_table_df: the dataframe containing the allele frequency table information
         reads_total: the number of total reads for a sample
         reads_aligned: the number of reads aligned to the given amplicon
     Returns:
-        dict: the dictionary containing all the information relevent to the ABE analysis of a crispresso sample
+        dict: the dictionary containing all the information relevant to the ABE analysis of a crispresso sample
         """
 
     search_seqs = generate_search_sequences(
@@ -68,7 +68,7 @@ def quantify_het_sample(amplicon_row: AmpliconConfig,
                         het_pos: list[int],
                         het_base1: str,
                         het_base2: str) -> dict:
-    """dispatch catch for heterozygous samples, creates a dictionary for het case
+    """Creates the result dictionary for heterozygous ABE samples.
     Args:
         amplicon_row: the AmpliconConfig object for a given sample
         sample_name: the name of the current sample
@@ -80,9 +80,9 @@ def quantify_het_sample(amplicon_row: AmpliconConfig,
         het_base1: nt at het_pos for allele 1
         het_base2: nt at het_pos for allele 2
     Returns:
-        A dictionary containing all sample metrics, broken out by allele for relvent samples.
+        A dictionary containing all sample metrics, broken out by allele for relevant samples.
     Note:
-        het_base1 will always coorispond to the protospacer allele
+        het_base1 will always correspond to the protospacer allele
     """
     base = None
     if amplicon_row.orientation == "F":
@@ -152,7 +152,7 @@ def quantify_oneseq_sample(amplicon_row: AmpliconConfig,
                             allele_table_df: pd.DataFrame,
                             reads_total: int,
                             reads_aligned: int) -> dict:
-    """creates a dictionary containing relevent analytics about a given CRISPResso sample.
+    """creates a dictionary containing relevant analytics about a given CRISPResso sample.
     Args:
         amplicon_row: the AmpliconConfig object for the specific sample
         sample_name: the name of the sample analysis is being performed on
@@ -160,7 +160,7 @@ def quantify_oneseq_sample(amplicon_row: AmpliconConfig,
         reads_total: the number of total reads in a fastq
         reads_aligned: the number of reads that aligned in the fastq
     Returns:
-        dict: returns a dictionary of all information from a given sample"""
+        dict: returns a dictionary of all information from a given ONESEQ sample"""
     first_10_seqs, full_seqs = generate_oneseq_search_sequences(
         protospacer=amplicon_row.protospacer,
         orientation=amplicon_row.orientation
@@ -180,7 +180,7 @@ def quantify_oneseq_sample(amplicon_row: AmpliconConfig,
     }
 
 def quantify_sample(amplicon_row: AmpliconConfig, crispresso_dir: Path) -> dict:
-    """"the guiding path for the sample quantification, determined by what kind of editor
+    """the guiding path for the sample quantification, determined by what kind of editor
     Args:
         amplicon_row: the AmpliconConfig object for the given CRISPResso sample
         crispresso_dir: the path to the crispresso directory

@@ -2,13 +2,13 @@ import pandas as pd
 from pathlib import Path
 
 
-# Reads CRISPResso ouput files: allele frequency tables, mapping statistics
+# Reads CRISPResso output files: allele frequency tables, mapping statistics
 
 def read_mapping_stats(path: Path) -> tuple[int, int]:
     """Opens the CRISPResso_mapping_statistics file and collects the total and
     aligned read number
     Args: 
-        path: Path to the CRISPResso_mapping_statstics file
+        path: Path to the CRISPResso_mapping_statistics file
     Returns:
         tuple[int, int]: returns a tuple containing total reads and aligned reads for a given sample
     Raises:
@@ -21,8 +21,17 @@ def read_mapping_stats(path: Path) -> tuple[int, int]:
         values = f.readline().strip().split("\t")
     
     row = dict(zip(headers,values))
-    # row is now {"READS AFTER PREPROCESSING": "######",
-    #             "READS ALIGNED": "##### }
+    # row contains all columns from the stats file:
+    # {
+    #     "READS IN INPUTS":         "######",
+    #     "READS AFTER PREPROCESSING":  "######",
+    #     "READS ALIGNED":           "######",
+    #     "N_COMPUTED_ALN":          "######",
+    #     "N_CACHED_ALN":            "######",
+    #     "N_COMPUTED_NOTALN":       "######",
+    #     "N_CACHED_NOTALN":         "######",
+    # }
+    # We only use READS AFTER PREPROCESSING and READS ALIGNED.
 
     reads_total = int(row["READS AFTER PREPROCESSING"])
     reads_aligned = int(row["READS ALIGNED"])
@@ -44,6 +53,7 @@ def read_allele_table(path: Path) -> pd.DataFrame:
         pd.DataFrame: a pandas dataframe of the allele_frequency_table_data
     Raises:
         FileNotFoundError: if read_csv's open() call fails
+        ValueError: df.astype(float) interacts with non-numeric value
     """
     df = pd.read_csv(path, sep="\t")
     return df

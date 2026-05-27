@@ -3,7 +3,14 @@ from analysis.heterozygous import find_het_position
 from pipeline.quantify import calculate_het_correction, calculate_het_protospacer_metrics
 import logging
 
-# Tests for het position detection and allele splitting
+"""Tests for analysis/heterozygous.py - covers find_het_position (basic detection, 
+threshold edges, A/G and C/T edit skip, deletion/non-canonical base skip, multiple 
+het positions), calculate_het_correction (basic, multiple positions, insertion 
+skip with and without warning), and calculate_het_protospacer_metrics (basic, 
+multiple positions, insertion skip F/R, allele2-only insertion, deletion 
+non-regression, all-insertion edge case, shorter-than-protospacer skip, warning 
+message content)."""
+
 
 
 def test_find_primary_het_position_basic():
@@ -30,7 +37,7 @@ def test_find_primary_het_position_edge():
     assert base1 == "A"
     assert base2 == "C"
 
-def test_find_primary_het_position_AG_edit_FORCED_FAIL():
+def test_find_primary_het_position_AG_edit_skipped():
     data = {
         "0": [0.95, 0.02, 0.02, 0.01],  # position 0: A dominant
         "1": [0.60, 0.00, 0.40, 0.00],  # position 1: A/C het
@@ -39,10 +46,10 @@ def test_find_primary_het_position_AG_edit_FORCED_FAIL():
     df = pd.DataFrame(data, index=["A","C","G","T"])
     indexes, base1, base2 = find_het_position(df)
     assert indexes == []
-    assert base1 == None
-    assert base2 == None   
+    assert base1 is None
+    assert base2 is None   
 
-def test_find_primary_het_position_CT_edit_FORCED_FAIL():
+def test_find_primary_het_position_CT_edit_skipped():
     data = {
         "0": [0.95, 0.02, 0.02, 0.01],  # position 0: A dominant
         "1": [0.00, 0.60, 0.00, 0.40],  # position 1: A/C het
@@ -51,10 +58,10 @@ def test_find_primary_het_position_CT_edit_FORCED_FAIL():
     df = pd.DataFrame(data, index=["A","C","G","T"])
     indexes, base1, base2 = find_het_position(df)
     assert indexes == []
-    assert base1 == None
-    assert base2 == None   
+    assert base1 is None
+    assert base2 is None   
 
-def test_find_het_position_no_split_FORCED_FAIL():
+def test_find_het_position_no_split_skipped():
     data = {
         "0": [0.95, 0.02, 0.02, 0.01],  # position 0: A dominant
         "1": [0.00, 0.90, 0.00, 0.10],  # position 1: A/C het
@@ -63,8 +70,8 @@ def test_find_het_position_no_split_FORCED_FAIL():
     df = pd.DataFrame(data, index=["A","C","G","T"])
     indexes, base1, base2 = find_het_position(df)
     assert indexes == []
-    assert base1 == None
-    assert base2 == None
+    assert base1 is None
+    assert base2 is None
 
 def test_find_het_position_returns_first():
     data = {
@@ -97,9 +104,9 @@ def test_find_ALL_het_positions():
         "2": [0.02, 0.95, 0.02, 0.01],  # position 2: C dominant
     }
     df = pd.DataFrame(data, index=["A","C","G","T"])
-    indexs, base1, base2 = find_het_position(df)
-    assert len(indexs) == 2
-    assert indexs == [0, 1]
+    indexes, base1, base2 = find_het_position(df)
+    assert len(indexes) == 2
+    assert indexes == [0, 1]
     assert base1 == "A"
     assert base2 == "T"
 
@@ -125,7 +132,7 @@ def test_calculate_het_correction_basic():
     assert round(result["correction_w_bystanders_allele2"], 2) == 75.0
     assert round(result["correction_wo_bystanders_allele2"], 2) == 0.0
 
-def test_caclulate_het_protospacer_metrics_basic():
+def test_calculate_het_protospacer_metrics_basic():
     table = pd.DataFrame({
         "Aligned_Sequence": [
             "CCGCCCTATTCCCCCTTTTT",  # allele1, matches search_seqs[0] (wo bystanders)
@@ -174,7 +181,7 @@ def test_calculate_het_correction_multiple_pos():
     assert round(result["correction_w_bystanders_allele2"], 2) == 75.0
     assert round(result["correction_wo_bystanders_allele2"], 2) == 0.0
 
-def test_calcualte_het_protospacer_metrics_multiple_pos():
+def test_calculate_het_protospacer_metrics_multiple_pos():
     table = pd.DataFrame({
         "Aligned_Sequence": [
             "CCGCCCTATTCCCCCTTTTT",  # allele1, matches search_seqs[0] (wo bystanders)
@@ -274,7 +281,7 @@ def test_het_single_insertion_R_skipped_and_warned(caplog):
     assert "alignment shift" in caplog.text
     assert "5" in caplog.text
 
-def test_het_single_insertion_allele_2_only(caplog):
+def test_het_single_insertion_allele2_only(caplog):
     table = pd.DataFrame({
         "Aligned_Sequence": [
             "CCGCCCTATTCCCCCTTTTT",   # allele1, clean A→G — both metrics for allele1
@@ -332,7 +339,7 @@ def test_deletion_not_skipped(caplog):
     assert round(result["correction_with_any_change_in_protospacer_allele2"], 2) == 100.0
     assert "alignment shift" not in caplog.text
 
-def test_all_row_insertions(caplog):
+def test_all_rows_are_insertions(caplog):
     table = pd.DataFrame({
         "Aligned_Sequence": [
             "CCGCCCTATTCCCCCTTTTTT",  # 21 — would be allele1 clean A→G
@@ -361,7 +368,7 @@ def test_all_row_insertions(caplog):
     assert "alignment shift" in caplog.text
     assert "100" in caplog.text
 
-def test_shorter_also_skipped(caplog):
+def test_het_shorter_than_protospacer_also_skipped(caplog):
     table = pd.DataFrame({
         "Aligned_Sequence": [
             "CCGCCCTATTCCCCCTTTTT",   # length 20, allele1 clean A→G
@@ -392,7 +399,7 @@ def test_shorter_also_skipped(caplog):
     assert "20" in caplog.text
 
 def test_warning_message_content(caplog):
-    table =pd.DataFrame({    
+    table = pd.DataFrame({    
         "Aligned_Sequence": [
             "CCGCCCTATTCCCCCTTTTT",   # allele1 clean
             "CCACCCTATTCCCCCTTTTT",   # allele1 no edit

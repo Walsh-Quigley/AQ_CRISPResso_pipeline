@@ -3,7 +3,7 @@ from loaders.amplicon_list import load_amplicon_list, find_amplicon_list
 from config import AmpliconConfig
 from loaders.crispresso_output import read_allele_table, read_mapping_stats
 
-#Tests for reading amplicon_list.csv
+
 """Tests for loaders/amplicon_list.py - covers CSV parsing, tolerated edit formats,
 and amplicon list file discovery."""
 
@@ -88,7 +88,7 @@ def test_parse_invalid_intended_edit_FORCED_FAIL(tmp_path):
     with pytest.raises(ValueError):
         load_amplicon_list(csv_file)
 
-def test_duplicate_name_FORCE_FAIL(tmp_path):
+def test_duplicate_name_FORCED_FAIL(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
@@ -98,7 +98,7 @@ def test_duplicate_name_FORCE_FAIL(tmp_path):
     with pytest.raises(ValueError):
         load_amplicon_list(csv_file)
 
-def test_non_nt_base_in_amplicon_FORCE_FAIL(tmp_path):
+def test_non_nt_base_in_amplicon_FORCED_FAIL(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
@@ -108,7 +108,7 @@ def test_non_nt_base_in_amplicon_FORCE_FAIL(tmp_path):
     with pytest.raises(ValueError):
         load_amplicon_list(csv_file)
 
-def test_non_nt_base_in_proto_FORCE_FAIL(tmp_path):
+def test_non_nt_base_in_proto_FORCED_FAIL(tmp_path):
     csv_file = tmp_path / "amplicon_list.csv"
     csv_file.write_text(
         "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n"
@@ -137,6 +137,7 @@ def test_protospacer_not_in_amplicon_FORCED_FAIL(tmp_path):
     )
     with pytest.raises(ValueError):
         load_amplicon_list(csv_file)
+        
 def test_read_mapping_stats(tmp_path):
     stats_file = tmp_path / "CRISPResso_mapping_statistics.txt"
     stats_file.write_text(
@@ -193,7 +194,7 @@ def test_read_allele_table_empty(tmp_path):
     result = read_allele_table(allele_file)
     assert len(result) == 0
 
-def test_find_amplicon_list_one_file_FORCED_FAIL(tmp_path):
+def test_find_amplicon_list_one_file(tmp_path):
     amplicon_list_path = tmp_path / "common_amplicon_list.csv"
     amplicon_list_path.touch()
     result = find_amplicon_list(tmp_path)

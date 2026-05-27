@@ -3,7 +3,7 @@ import pytest
 from analysis.abe import calculate_correction, calculate_protospacer_metrics
 import logging
 
-# Tests for ABE metric calcualtions
+
 """Tests for analysis/abe.py - covers perfect and tolerated analysis in the 
 forward and reverse orientation"""
 
@@ -46,7 +46,7 @@ def test_calculate_protospacer_metrics_forward():
     assert any_AtoG == 40.0
     assert any_change == 70.0
 
-def test_calcualte_protospacer_metrics_reverse():
+def test_calculate_protospacer_metrics_reverse():
     table = pd.DataFrame({
         "Aligned_Sequence": ["AAAAAAAC",   # intended A→G only → both metrics
                             "AAAAGAAC",   # intended A→G + T→C elsewhere → any_change only
@@ -83,7 +83,7 @@ def test_calculate_correction_no_matches():
     assert without == 0
     assert with_ == 0
 
-def test_calcualte_correction_deletion_at_intended_edit_position():
+def test_calculate_correction_deletion_at_intended_edit_position():
     table = pd.DataFrame({
         "Aligned_Sequence": ["GATCG-ACGT", "GATCGGACGT" ,"AATCGAACGT"],
         "%Reads": [35.0, 25.0, 40.0]
@@ -169,7 +169,7 @@ def test_deletion_NOT_skipped(caplog):
     table = pd.DataFrame({
         "Aligned_Sequence": ["GTTTTTTT",   # intended A→G only → both metrics
                             "GTTTCT-T",
-                            "TTTTTTTT"],   # intended A→G + T→C elsewhere → any_change only
+                            "TTTTTTTT"],  
 
         "%Reads": [40.0, 30.0, 30.0]
     })
@@ -186,10 +186,10 @@ def test_deletion_NOT_skipped(caplog):
 
 def test_all_rows_are_insertions(caplog):
     table = pd.DataFrame({
-        "Aligned_Sequence": ["GTTTTTTCT",   # intended A→G only → both metrics
-                            "GTTTCTTTC",   # intended A→G + T→C elsewhere → any_change only
-                            "ATTGTTTTT", #insertion
-                            "ACCCCCCCC"],  # insertion
+        "Aligned_Sequence": ["GTTTTTTCT",  
+                            "GTTTCTTTC",   
+                            "ATTGTTTTT",   
+                            "ACCCCCCCC"],  
         "%Reads": [40.0, 30.0, 15.0, 15.0]
     })
     protospacer = "ATTTTTTT"   # A at pos 1
@@ -228,7 +228,7 @@ def test_warning_message_content(caplog):
     table = pd.DataFrame({
         "Aligned_Sequence": ["GTTTTTTT",   # intended A→G only → both metrics
                             "GTTTCTTT",   # intended A→G + T→C elsewhere → any_change only
-                            "ATTTTTTTT"],  # no intended edit → neither
+                            "ATTTTTTTT"],  #insertion (skipped), no intended edit → neither
         "%Reads": [40.0, 52.5, 7.5]
     })
     protospacer = "ATTTTTTT"   # A at pos 1

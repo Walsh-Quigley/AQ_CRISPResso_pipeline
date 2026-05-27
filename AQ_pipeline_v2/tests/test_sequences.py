@@ -3,9 +3,9 @@ from utils.sequences import reverse_complement, generate_search_sequences, gener
 
 
 """Tests for utils/sequences.py - covers reverse complement extensively, generate search
-sequence no bystands, multiple bystander, edit at the first and last position, invalid
-orientation FORCED FAIL, position out of range FORCED FAIL, wrong intended base forced fail,
-wrong tolerated base Force fail"""
+sequence no bystanders, multiple bystander, edit at the first and last position, invalid
+orientation FORCED FAIL, position out of range FORCED FAIL, wrong intended base FORCED FAIL,
+wrong tolerated base FORCED FAIL"""
 
 def test_reverse_complement_basic():
     assert reverse_complement("ATCG") == "CGAT"
@@ -45,7 +45,6 @@ def test_generate_search_sequences_no_bystander_reverse():
     assert result == ["CGACCGAAC"]
 
 def test_generate_search_sequences_one_bystander():
-    # position 3 (t) is intended edit, position 7 (a) is the tolerated bystander
     result = generate_search_sequences(
         protospacer="aATACGGAaCGT",
         intended_edit=1,
@@ -88,7 +87,6 @@ def test_generate_search_sequences_edit_at_last_position():
     assert result == ["AATCGAACGG"]
 
 def test_generate_search_sequences_one_bystander_reverse():
-    # same input as one_bystander test but orientation R
     result = generate_search_sequences(
         protospacer="AAaCGAaCGT",
         intended_edit=3,

@@ -1,14 +1,13 @@
-# utils/sequences.py
+
 from itertools import combinations
 
 
-# DNA sequence utilities used across the pipeline.
-# (intended edit + tolerated bystander combinations) for allele table filtering
+# DNA sequence utilities: reverse complement, ABE search sequence generation, ONE-seq search sequence generation
 
 
 
 def reverse_complement(seq:str) -> str:
-    """Reverse_complements a given string
+    """Reverse complements a given string
     Args:
         seq: a sequence of characters in str format
     Returns:
@@ -33,11 +32,11 @@ def generate_search_sequences(
         protospacer: the user's guide sequence
         intended_edit: the user's intended_edit location
         tolerated_edits: the user's tolerated_edit locations
-        orientation: the orientaion of the guide relative to the amplicon
+        orientation: the orientation of the guide relative to the amplicon
     Returns:
         list[str]: a list of search sequences to be used
     Raises:
-        ValueError: if the orientaion is neither forward nor reversed
+        ValueError: if the orientation is neither forward nor reverse
         ValueError: if the intended edit target base is not an A
         ValueError: if the tolerated edit location is not an A
     Note: 
@@ -61,8 +60,7 @@ def generate_search_sequences(
                 f"Expected '{target_base}' at tolerated edit position {pos} but found '{bases[pos - 1]}'. "
                 f"Check tolerated_edits in amplicon_list.csv."
             )
-
-        
+                
     bases[intended_edit - 1] = "G"
 
     sequences = []
@@ -72,7 +70,6 @@ def generate_search_sequences(
             for pos in combo:
                 current[pos - 1] = "G"
             sequences.append("".join(current))
-        
     if orientation == "R":
         sequences = [reverse_complement(s) for s in sequences]
 
@@ -80,14 +77,14 @@ def generate_search_sequences(
 
 def generate_oneseq_search_sequences(protospacer:str,
                                      orientation:str) -> tuple[list[str], list[str]]:
-    """Creates all search sequences for ONE_seq case. Includes all A to G changes, and A to G changes
+    """Creates all search sequences for ONESEQ case. Includes all A to G changes, and A to G changes
         only in the first 10 bp.
     Args: 
         protospacer: the users guide sequence
         orientation: the orientation of the guide sequence relative to the amplicon
     Returns:
         tuple[list[str], list[str]]: returns a tuple of lists containing sequences with edits in
-            the first 10bp and edits anywhere in the protospacer respectivly 
+            the first 10bp and edits anywhere in the protospacer respectively 
     Raises:
         ValueError: orientation is neither forward nor reverse
     Note:
@@ -97,7 +94,7 @@ def generate_oneseq_search_sequences(protospacer:str,
     """
     
     if orientation not in ("F", "R"):
-        raise ValueError(f"Could not determine whether forward or reverse orientation")
+        raise ValueError(f"orientation must be 'F' or 'R', got '{orientation}'")
     
     working_seq = protospacer
     

@@ -6,6 +6,16 @@ import os
 import pandas as pd
 import shutil
 
+"""End-to-end integration tests for the AQ pipeline - covers ABE (forward + reverse), 
+het ABE (heterozygous forward + reverse), and ONESEQ (forward + reverse) full 
+workflows. Each test builds a tmp_path directory with fastq files and amplicon_list, 
+then invokes CRISPResso_Loop.py and Quantification_Loop.py via subprocess. Output 
+CSVs are saved to tests/test_output/ for manual inspection.
+
+Requires: Ubuntu/Linux environment with CRISPResso installed (these tests cannot 
+run on Windows)."""
+
+
 env = os.environ.copy()
 env["PYTHONPATH"] = str(Path(__file__).parent.parent)  # points to AQ_pipeline_v2/
 
@@ -19,7 +29,7 @@ def test_ABE(tmp_path):
     PAH1_proto = "TCACAGTTCGGGGGTATACA"
     R186W_proto_rc = reverse_complement("CAGCAGCCACTCAGAGTCTC")
 
-    PAH1_amplicon_seq = "A" * 60 + PAH1_proto + "A" * 71
+    PAH1_amplicon_seq = "A" * 60 + PAH1_proto + "A" * 71 #numbers come from illumina 151 length
     R186W_amplicon_seq = "A" * 60 + R186W_proto_rc + "A" * 71
 
     with open(tmp_path / "amplicon_list.csv", "w") as f:

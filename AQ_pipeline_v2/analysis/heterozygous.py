@@ -8,10 +8,10 @@ import logging
 def find_het_position(quant_window_df: pd.DataFrame) -> tuple[list[int], str | None, str | None]:
     """finds all positions in protospacer that differ from one allele vs the other
     Args:
-        quant_window_df: dataframe for the given samples quantification window
+        quant_window_df: dataframe for the given sample's quantification window
     Returns:
         tuple[list[int], str, str]: returns a tuple containing the list of positions of het nt, and the 
-            two bases that rest a the primary het index."""
+            two bases that rest at the primary het index."""
     het_positions = []
     primary_base1 = None
     primary_base2 = None
@@ -88,14 +88,14 @@ def calculate_het_correction(allele_table_df: pd.DataFrame,
     pct_w_base1 = ((reads_w_base1 / total_reads_base1) * 100)  if total_reads_base1 > 0 else 0.0
     pct_w_base2 = ((reads_w_base2 / total_reads_base2) * 100)  if total_reads_base2 > 0 else 0.0
 
-    resultsDict = {
+    results_dict = {
         "correction_wo_bystanders_allele1": pct_wo_base1,
         "correction_w_bystanders_allele1": pct_w_base1,
-        "correction_w_bystanders_allele2": pct_w_base2,
         "correction_wo_bystanders_allele2": pct_wo_base2,
+        "correction_w_bystanders_allele2": pct_w_base2,    
     }
 
-    return resultsDict
+    return results_dict
 
 def calculate_het_protospacer_metrics(allele_table: pd.DataFrame,   
                                       protospacer: str,
@@ -134,13 +134,13 @@ def calculate_het_protospacer_metrics(allele_table: pd.DataFrame,
 
     rc_protospacer = reverse_complement(protospacer)
 
-    primary_het_position = het_pos[0]
+    primary_het_pos = het_pos[0]
     for _, row in allele_table.iterrows():
         if len(row["Aligned_Sequence"]) != len(protospacer):
             alignment_shift_reads_pct += row["%Reads"]
             continue
         if orientation == "F":
-            if row["Aligned_Sequence"][primary_het_position] == base1:
+            if row["Aligned_Sequence"][primary_het_pos] == base1:
                 total_reads_base1 += row["%Reads"]
                 if row["Aligned_Sequence"][intended_edit-1] == "G":
                     any_change_in_protospacer_base1 += row["%Reads"]
@@ -154,7 +154,7 @@ def calculate_het_protospacer_metrics(allele_table: pd.DataFrame,
                                 break
                     if only_AtoG:
                         any_AtoG_change_in_protospacer_base1 += row["%Reads"]
-            elif row["Aligned_Sequence"][primary_het_position] == base2:
+            elif row["Aligned_Sequence"][primary_het_pos] == base2:
                 total_reads_base2 += row["%Reads"]
                 if row["Aligned_Sequence"][intended_edit-1] == "G":
                     any_change_in_protospacer_base2 += row["%Reads"]
@@ -171,7 +171,7 @@ def calculate_het_protospacer_metrics(allele_table: pd.DataFrame,
             else:
                 continue
         elif orientation == "R":
-            if row["Aligned_Sequence"][primary_het_position] == base1:
+            if row["Aligned_Sequence"][primary_het_pos] == base1:
                 total_reads_base1 += row["%Reads"]
                 if row["Aligned_Sequence"][len(rc_protospacer) - intended_edit] == "C":
                     any_change_in_protospacer_base1 += row["%Reads"]
@@ -185,7 +185,7 @@ def calculate_het_protospacer_metrics(allele_table: pd.DataFrame,
                                 break
                     if only_AtoG:
                         any_AtoG_change_in_protospacer_base1 += row["%Reads"]
-            elif row["Aligned_Sequence"][primary_het_position] == base2:
+            elif row["Aligned_Sequence"][primary_het_pos] == base2:
                 total_reads_base2 += row["%Reads"]
                 if row["Aligned_Sequence"][len(rc_protospacer) - intended_edit] == "C":
                     any_change_in_protospacer_base2 += row["%Reads"]
