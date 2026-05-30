@@ -13,6 +13,7 @@ def find_het_position(quant_window_df: pd.DataFrame) -> tuple[list[int], str | N
         tuple[list[int], str, str]: returns a tuple containing the list of positions of het nt, and the 
             two bases that rest at the primary het index."""
     het_positions = []
+
     primary_base1 = None
     primary_base2 = None
     for idx, col in enumerate(quant_window_df.columns):
@@ -23,6 +24,10 @@ def find_het_position(quant_window_df: pd.DataFrame) -> tuple[list[int], str | N
                 continue
             if 0.40 <= col_data[base] <= 0.60:
                 bases_in_range.append(base)
+        # A/G and C/T pairs at ~50/50 are indistinguishable from ABE editing artifacts,
+        # so they're filtered. Filtered positions are NOT added to het_positions,
+        # meaning they get counted as "edits" in any_AtoG / any_change protospacer walks —
+        # the conservative choice when we can't tell het from editing.
         if len(bases_in_range) == 2:                        
             if set(bases_in_range) in [{"A","G"}, {"C","T"}]:
                 continue                                     
@@ -49,7 +54,7 @@ def calculate_het_correction(allele_table_df: pd.DataFrame,
     Note:
         it is of note that reads_w_baseX are "reads with tolerated bystanders for base X". It is NOT "read with base X"
     """
-    
+    unsorted_reads_pct = 0.0
     primary_het_pos = het_pos[0]
     total_reads_base1, total_reads_base2 = 0, 0
     reads_wo_base1, reads_wo_base2 = 0, 0
@@ -73,8 +78,17 @@ def calculate_het_correction(allele_table_df: pd.DataFrame,
             if row["Aligned_Sequence"] == search_seqs[0]:
                 reads_wo_base2 += row["%Reads"]
         else:
+            unsorted_reads_pct += row["%Reads"]
             continue
     
+    if unsorted_reads_pct > 3:
+        logging.warning(
+            f"{unsorted_reads_pct:.2f}% of aligned reads had a base other than "
+            f"'{base1}' or '{base2}' at het position {primary_het_pos + 1} — "
+            f"these reads were excluded from per-allele metrics. "
+            f"High values may indicate sequencing errors or a third allele."
+        )
+
     if alignment_shift_reads_pct > 3:
         logging.warning(
             f"Skipped {alignment_shift_reads_pct:.2f}% of reads with alignment shifts "
@@ -93,6 +107,10 @@ def calculate_het_correction(allele_table_df: pd.DataFrame,
         "correction_w_bystanders_allele1": pct_w_base1,
         "correction_wo_bystanders_allele2": pct_wo_base2,
         "correction_w_bystanders_allele2": pct_w_base2,    
+        "total_pct_allele1": total_reads_base1,
+        "total_pct_allele2": total_reads_base2,
+        "total_pct_allele1": total_reads_base1,
+        "total_pct_allele2": total_reads_base2,
     }
 
     return results_dict

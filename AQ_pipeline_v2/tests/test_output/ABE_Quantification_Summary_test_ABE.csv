@@ -1,3 +1,0 @@
-sample,reads_total,reads_aligned,correction_without_bystanders,correction_with_tolerated_bystanders,correction_with_any_AtoG_change,correction_with_any_change_in_protospacer,w_bystanders_minus_wo_bystanders,any_AtoG_minus_w_bystanders,any_change_minus_any_AtoG,target_locus,perfect_correction,corrected_locus_with_bystanders
-Sample_PAH1_1,1000,1000,20.0,40.0,50.0,60.0,20.0,10.0,10.0,TCACAGTTCGGGGGTATACA,TCACGGTTCGGGGGTATACA,TCACGGTTCGGGGGTATACA;TCGCGGTTCGGGGGTATACA
-Sample_R186W_1,2000,2000,20.0,40.0,50.0,60.0,20.0,10.0,10.0,CAGCAGCCACTCAGAGTCTC,GAGACTCTGAGCGGCTGCTG,GAGACTCTGAGCGGCTGCTG;GAGACTCCGAGCGGCTGCTG

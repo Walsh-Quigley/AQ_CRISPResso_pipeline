@@ -252,6 +252,6 @@ For each sample, reports the percentage of reads containing A→G edits within t
 ### Prism CSV (Prism_Input.csv)
 The Prism CSV pivots the quantification summary into a wide format suitable for direct import into GraphPad Prism. Each row represents a unique base sample, and replicate columns are appended with `_rep1`, `_rep2`, `_rep3`.
 
-**Sample naming requirement:** For replicate detection to work, sample names must end in `_<rep>` or `-<rep>` (e.g., `Sample_1`, `Sample_2`, `Sample_3`). Samples without this suffix are treated as `_rep1` and logged as a warning.
+**Sample naming requirement:** For replicate detection to work, sample names must end in `_<rep>`, `-<rep>`, `_rep<N>`, or `-rep<N>` (e.g., `Sample_1`, `Sample_3`, `Sample_rep1`, `Sample_rep2`). Samples without one of these suffixes are treated as `_rep1` and logged as a warning.
 
 **Replicate limit:** The Prism export currently supports up to 3 replicates. If more than 3 are detected, the pipeline raises an error rather than silently dropping data.

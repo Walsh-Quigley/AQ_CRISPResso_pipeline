@@ -479,3 +479,57 @@ def test_het_correction_single_insertion_skipped_and_not_warned(caplog):
     assert round(result["correction_w_bystanders_allele2"], 2) == 75.0
     assert round(result["correction_wo_bystanders_allele2"], 2) == 0.0
     assert "alignment shift" not in caplog.text
+
+def test_calculate_het_correction_unsorted_reads_warned(caplog):
+    table = pd.DataFrame({
+        "Aligned_Sequence": [
+            "CCACCHTTTTCCCCCTTTTT",  # allele1 (H), matches search_seqs[0] — wo bystanders
+            "CCGCCHTTTTCCCCCTTTTT",  # allele1, no match
+            "CCACCXTATTCCCCCTTTTT",  # allele2 (X), matches search_seqs[1] — w bystanders
+            "CCGCCXTATTCCCCCTTTTT",  # allele2, no match
+            "CCACCYTTTTCCCCCTTTTT",  # third base (Y) at het pos — unsorted
+        ],
+        "%Reads": [30.0, 15.0, 25.0, 10.0, 20.0]   # 20% unsorted — above 3% threshold
+    })
+    search_seqs = ["CCACCHTTTTCCCCCTTTTT", "CCACCXTATTCCCCCTTTTT"]
+    het_pos = [5]
+    base1 = "H"
+    base2 = "X"
+
+    with caplog.at_level(logging.WARNING):
+        result = calculate_het_correction(table, search_seqs, het_pos, base1, base2)
+
+    # warning should fire
+    assert "20.00" in caplog.text       # the unsorted pct
+    assert "other than" in caplog.text  # the explanatory phrase
+    assert "H" in caplog.text and "X" in caplog.text  # the expected bases
+
+    # percentages should still be mathematically correct (unsorted reads excluded from denominator)
+    # allele1 total = 45 (30+15), wo = 30 → 30/45 = 66.67%
+    # allele2 total = 35 (25+10), wo = 0, w = 25 → w_bystanders = 25/35 = 71.43%
+    assert round(result["correction_wo_bystanders_allele1"], 2) == 66.67
+    assert round(result["correction_w_bystanders_allele1"], 2) == 66.67
+    assert round(result["correction_wo_bystanders_allele2"], 2) == 0.0
+    assert round(result["correction_w_bystanders_allele2"], 2) == 71.43
+
+
+def test_calculate_het_correction_unsorted_reads_NOT_warned(caplog):
+    table = pd.DataFrame({
+        "Aligned_Sequence": [
+            "CCACCHTTTTCCCCCTTTTT",  
+            "CCGCCHTTTTCCCCCTTTTT",  
+            "CCACCXTATTCCCCCTTTTT",  
+            "CCGCCXTATTCCCCCTTTTT",  
+            "CCACCYTTTTCCCCCTTTTT",  # only 2% unsorted — below 3% threshold
+        ],
+        "%Reads": [40.0, 18.0, 30.0, 10.0, 2.0]
+    })
+    search_seqs = ["CCACCHTTTTCCCCCTTTTT", "CCACCXTATTCCCCCTTTTT"]
+    het_pos = [5]
+    base1 = "H"
+    base2 = "X"
+
+    with caplog.at_level(logging.WARNING):
+        result = calculate_het_correction(table, search_seqs, het_pos, base1, base2)
+
+    assert "other than" not in caplog.text

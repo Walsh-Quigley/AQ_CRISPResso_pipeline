@@ -5,6 +5,8 @@ from pipeline.crispresso import identify_amplicon, run_crispresso
 
 #Entry point for the CRISPResso loop
 
+SKIP_DIRS = {"__pycache__", ".git", ".DS_Store"}
+
 
 log_dir = Path("logs")
 log_dir.mkdir(exist_ok=True)
@@ -29,6 +31,8 @@ def main():
 
     for sample_dir in fastqs_dir.iterdir():
         if not sample_dir.is_dir():
+            continue
+        if sample_dir.name in SKIP_DIRS:
             continue
         try:
             logging.info(f"Processing {sample_dir.name}")

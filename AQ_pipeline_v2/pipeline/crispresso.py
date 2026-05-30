@@ -20,8 +20,8 @@ def pair_fastq_files(fastq_files: list[str]) -> tuple[str, str]:
     Raises:
         ValueError: if R1 and R2 cannot be unambiguously identified
     """
-    r1_files = [f for f in fastq_files if "_R1" in f.upper()]
-    r2_files = [f for f in fastq_files if "_R2" in f.upper()]
+    r1_files = [f for f in fastq_files if "_R1" in Path(f).name.upper()]
+    r2_files = [f for f in fastq_files if "_R2" in Path(f).name.upper()]
     if len(r1_files) == 1 and len(r2_files) == 1:
         read1 = r1_files[0]
         read2 = r2_files[0]

@@ -170,6 +170,24 @@ def test_read_mapping_stats_greater_aligned_than_total_FORCED_FAIL(tmp_path):
     with pytest.raises(ValueError):
         read_mapping_stats(stats_file)
 
+def test_read_mapping_stats_low_alignment_FORCED_FAIL(tmp_path):
+    stats_file = tmp_path / "CRISPResso_mapping_statistics.txt"
+    stats_file.write_text(
+        "READS IN INPUTS\tREADS AFTER PREPROCESSING\tREADS ALIGNED\tN_COMPUTED_ALN\tN_CACHED_ALN\tN_COMPUTED_NOTALN\tN_CACHED_NOTALN\n"
+        "1000\t1000\t50\t10\t40\t500\t400\n"   # 5% alignment — below 10% threshold
+    )
+    with pytest.raises(ValueError):
+        read_mapping_stats(stats_file)
+
+def test_read_mapping_stats_exactly_10pct_alignment_OK(tmp_path):
+    stats_file = tmp_path / "CRISPResso_mapping_statistics.txt"
+    stats_file.write_text(
+        "READS IN INPUTS\tREADS AFTER PREPROCESSING\tREADS ALIGNED\tN_COMPUTED_ALN\tN_CACHED_ALN\tN_COMPUTED_NOTALN\tN_CACHED_NOTALN\n"
+        "1000\t1000\t100\t30\t70\t500\t400\n"   # exactly 10% — should NOT raise
+    )
+    result = read_mapping_stats(stats_file)
+    assert result == (1000, 100)
+
 def test_read_allele_table(tmp_path):
     allele_file = tmp_path / "Alleles_frequency_table_around.txt"
     allele_file.write_text(

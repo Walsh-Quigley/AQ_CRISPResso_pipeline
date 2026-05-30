@@ -2,6 +2,7 @@ from pathlib import Path
 from glob import glob
 import pandas as pd
 import re
+import logging
 from config import AmpliconConfig
 from loaders.crispresso_output import read_mapping_stats, read_allele_table, read_quant_window
 from utils.sequences import generate_search_sequences, generate_oneseq_search_sequences, reverse_complement
@@ -92,6 +93,18 @@ def quantify_het_sample(amplicon_row: AmpliconConfig,
     if base == het_base2:
         het_base1, het_base2 = het_base2, het_base1
 
+    if amplicon_row.orientation == "F":
+        intended_pos_in_het_space = amplicon_row.intended_edit - 1
+    else:
+        intended_pos_in_het_space = len(amplicon_row.protospacer) - amplicon_row.intended_edit
+
+    if het_pos[0] == intended_pos_in_het_space:
+        logging.warning(
+            f"Heterozygous position detected at intended edit position {amplicon_row.intended_edit} "
+            f"for sample {sample_name}. Allele '{het_base2}' cannot be ABE-edited (not an A); "
+            f"expect 0% correction on allele2. Verify this is intentional."
+        )
+
     search_seqs = generate_search_sequences(
         protospacer=amplicon_row.protospacer,
         intended_edit=amplicon_row.intended_edit,
@@ -104,6 +117,12 @@ def quantify_het_sample(amplicon_row: AmpliconConfig,
                                                     het_pos,
                                                     het_base1,
                                                     het_base2)
+    
+    total_pct_allele1 = het_correction_dict.pop("total_pct_allele1")
+    total_pct_allele2 = het_correction_dict.pop("total_pct_allele2")
+    reads_aligned_allele1 = round(total_pct_allele1 / 100 * reads_aligned)
+    reads_aligned_allele2 = round(total_pct_allele2 / 100 * reads_aligned)
+
     het_protospacer_metrics_dict = calculate_het_protospacer_metrics(allele_table_df,
                                                                      amplicon_row.protospacer,
                                                                      amplicon_row.intended_edit,
@@ -142,6 +161,8 @@ def quantify_het_sample(amplicon_row: AmpliconConfig,
         "any_change_minus_any_AtoG_allele2": round(het_protospacer_metrics_dict["correction_with_any_change_in_protospacer_allele2"] - het_protospacer_metrics_dict["correction_with_any_AtoG_change_allele2"], 2),
         "het_position": het_pos[0] + 1,
         "het_alleles": f"{het_base1}/{het_base2}",
+        "reads_aligned_allele1": reads_aligned_allele1,
+        "reads_aligned_allele2": reads_aligned_allele2,
         "target_locus":amplicon_row.protospacer,
         "perfect_correction": search_seqs[0],
         "corrected_locus_with_bystanders": ";".join(search_seqs)
@@ -210,15 +231,14 @@ def quantify_sample(amplicon_row: AmpliconConfig, crispresso_dir: Path) -> dict:
 
     if amplicon_row.intended_edit == "ONESEQ":
         results_dict = quantify_oneseq_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned)
-    else:
-        quant_window = crispresso_subfolder / "Quantification_window_nucleotide_percentage_table.txt"
-        quant_window_df = read_quant_window(quant_window)
+    elif amplicon_row.editor == "ABE":
+        quant_window_df = read_quant_window(crispresso_subfolder / "Quantification_window_nucleotide_percentage_table.txt")
         het_pos, base1, base2 = find_het_position(quant_window_df)
-        if amplicon_row.editor == "ABE" and het_pos:
+        if het_pos:
             results_dict = quantify_het_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned, het_pos, base1, base2)
-        elif amplicon_row.editor == "ABE":
-            results_dict = quantify_abe_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned)
         else:
-            raise ValueError(f"Unknown editor type: {amplicon_row.editor}")
-    
+            results_dict = quantify_abe_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned)
+    else:
+        raise ValueError(f"Unknown editor type: {amplicon_row.editor}")
+
     return results_dict

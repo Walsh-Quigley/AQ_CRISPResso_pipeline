@@ -12,8 +12,8 @@ workflows. Each test builds a tmp_path directory with fastq files and amplicon_l
 then invokes CRISPResso_Loop.py and Quantification_Loop.py via subprocess. Output 
 CSVs are saved to tests/test_output/ for manual inspection.
 
-Requires: Ubuntu/Linux environment with CRISPResso installed (these tests cannot 
-run on Windows)."""
+Requires: Linux or macOS environment with CRISPResso installed (Windows users 
+can use WSL)."""
 
 
 env = os.environ.copy()
@@ -72,13 +72,18 @@ def test_ABE(tmp_path):
         ["python", str(Path(__file__).parent.parent / "Quantification_Loop.py")],
         cwd=tmp_path,
         env=env,
-        input="n\n",
+        input="y\n",
         text=True,
-        check=True
+        check=True,
     )
+
     shutil.copy(
         tmp_path / "ABE_Quantification_Summary.csv",
         Path("tests/test_output") / "ABE_Quantification_Summary_test_ABE.csv"
+    )
+    shutil.copy(
+        tmp_path / "Prism_Input.csv",
+        Path("tests/test_output") / "Prism_Input_test_ABE.csv"
     )
     df = pd.read_csv(tmp_path / "ABE_Quantification_Summary.csv")
     pah1 = df[df["sample"] == "Sample_PAH1_1"].iloc[0]
@@ -88,6 +93,17 @@ def test_ABE(tmp_path):
         assert row["correction_with_tolerated_bystanders"] == 40.0
         assert row["correction_with_any_AtoG_change"] == 50.0
         assert row["correction_with_any_change_in_protospacer"] == 60.0
+    prism_csv = tmp_path / "Prism_Input.csv"
+    assert prism_csv.exists()
+    prism_df = pd.read_csv(prism_csv)
+    # both base_samples present
+    base_samples = set(prism_df["base_sample"])
+    assert "Sample_PAH1" in base_samples
+    assert "Sample_R186W" in base_samples
+    # spot-check the value pipeline (correction_without_bystanders_rep1 == 20.0 from the asserts above)
+    pah1_row = prism_df[prism_df["base_sample"] == "Sample_PAH1"].iloc[0]
+    assert pah1_row["correction_without_bystanders_rep1"] == 20.0
+
 
 def test_het_ABE(tmp_path):
     fastq_dir_f = tmp_path / "fastqs" / "Sample_PAH1_1"
@@ -142,13 +158,21 @@ def test_het_ABE(tmp_path):
         ["python", str(Path(__file__).parent.parent / "Quantification_Loop.py")],
         cwd=tmp_path,
         env=env,
-        input="n\n",
+        input="y\n",
         text=True,
         check=True
     )
     shutil.copy(
         tmp_path / "ABE_Quantification_Summary.csv",
         Path("tests/test_output") / "ABE_Quantification_Summary_test_het_ABE.csv"
+    )
+    shutil.copy(
+        tmp_path / "Prism_Input_het_allele1.csv",
+        Path("tests/test_output") / "Prism_Input_het_allele1_test_het_ABE.csv"
+    )
+    shutil.copy(
+        tmp_path / "Prism_Input_het_allele2.csv",
+        Path("tests/test_output") / "Prism_Input_het_allele2_test_het_ABE.csv"
     )
     df = pd.read_csv(tmp_path / "ABE_Quantification_Summary.csv")
     pah1_het = df[df["sample"] == "Sample_PAH1_1"].iloc[0]
@@ -163,6 +187,38 @@ def test_het_ABE(tmp_path):
         assert row["correction_with_any_AtoG_change_allele2"] == 100.0
         assert row["correction_with_any_change_in_protospacer_allele2"] == 100.0
     
+    allele1_csv = tmp_path / "Prism_Input_het_allele1.csv"
+    allele2_csv = tmp_path / "Prism_Input_het_allele2.csv"
+    assert allele1_csv.exists()
+    assert allele2_csv.exists()
+
+    allele1_df = pd.read_csv(allele1_csv)
+    allele2_df = pd.read_csv(allele2_csv)
+
+    # both base_samples present in both files
+    for df in [allele1_df, allele2_df]:
+        base_samples = set(df["base_sample"])
+        assert "Sample_PAH1" in base_samples
+        assert "Sample_R186W" in base_samples
+
+    # spot-check values match the per-allele assertions above
+    pah1_a1 = allele1_df[allele1_df["base_sample"] == "Sample_PAH1"].iloc[0]
+    assert pah1_a1["correction_wo_bystanders_rep1"] == 20.0   # matches allele1 wo_bystanders assert above
+
+    pah1_a2 = allele2_df[allele2_df["base_sample"] == "Sample_PAH1"].iloc[0]
+    assert pah1_a2["correction_wo_bystanders_rep1"] == 0.0    # matches allele2 wo_bystanders assert above
+
+    # per-allele reads_aligned should be ~half of total since het is 50/50
+    assert pah1_a1["reads_aligned_rep1"] == 500
+    assert pah1_a2["reads_aligned_rep1"] == 500
+
+    # R186W
+    r186w_a1 = allele1_df[allele1_df["base_sample"] == "Sample_R186W"].iloc[0]
+    r186w_a2 = allele2_df[allele2_df["base_sample"] == "Sample_R186W"].iloc[0]
+    assert r186w_a1["reads_aligned_rep1"] == 1000
+    assert r186w_a2["reads_aligned_rep1"] == 1000
+
+
 def test_ONESEQ(tmp_path):
     fastq_dir_f= tmp_path / "fastqs" / "Sample_forward_ONESEQ_1"
     fastq_dir_f.mkdir(parents=True)
@@ -224,3 +280,38 @@ def test_ONESEQ(tmp_path):
     for row in [forward_ONESEQ, reverse_ONESEQ]:
         assert row["pct_AtoG_first_10bp"] == 40.0
         assert row["pct_AtoG_anywhere"] == 60.0
+
+def test_failed_samples_csv_generated(tmp_path):
+    # Create fastqs dir with a sample whose name won't match any amplicon
+    fastq_dir = tmp_path / "fastqs" / "UnmatchableName_1"
+    fastq_dir.mkdir(parents=True)
+
+    # Create an amplicon_list that doesn't contain "UnmatchableName"
+    PAH1_proto = "TCACAGTTCGGGGGTATACA"
+    PAH1_amplicon_seq = "A" * 60 + PAH1_proto + "A" * 71
+    with open(tmp_path / "amplicon_list.csv", "w") as f:
+        f.write("name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n")
+        f.write(f"PAH1,{PAH1_proto},ABE,F,{PAH1_amplicon_seq},,3,5\n")
+
+    # Run Quantification_Loop only — no CRISPResso needed because
+    # the failure is at the identify_amplicon step, before CRISPResso output is read
+    subprocess.run(
+        ["python", str(Path(__file__).parent.parent / "Quantification_Loop.py")],
+        cwd=tmp_path,
+        env=env,
+        input="n\n",
+        text=True,
+        check=True,
+    )
+
+    # Verify failed_samples.csv was created with the expected content
+    failed_csv = tmp_path / "failed_samples.csv"
+    assert failed_csv.exists()
+
+    df = pd.read_csv(failed_csv)
+    assert len(df) == 1
+    assert df["sample"].iloc[0] == "UnmatchableName_1"
+    assert df["error_type"].iloc[0] == "ValueError"
+    assert "amplicon" in df["error_message"].iloc[0].lower()
+    assert not (tmp_path / "ABE_Quantification_Summary.csv").exists()
+

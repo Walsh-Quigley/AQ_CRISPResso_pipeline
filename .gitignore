@@ -11,7 +11,7 @@ __pycache__/
 logs/
 
 # FASTQ data
-fastqs/
+**/fastqs/
 
 # Amplicon list (contains experiment-specific data)
 *amplicon_list*.csv
@@ -28,3 +28,19 @@ run_ui.py
 
 # CBE stub
 scripts/process_CBE_case.py
+
+# Pipeline output files
+ABE_Quantification_Summary.csv
+ONESEQ_Quantification_Summary.csv
+Prism_Input*.csv
+failed_samples.csv
+
+# Pytest cache
+.pytest_cache/
+
+# Test output artifacts
+tests/test_output/
+
+# Dev comparison artifacts
+comparison_*.csv
+FileToCompare/

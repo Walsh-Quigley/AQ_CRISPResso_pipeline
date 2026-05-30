@@ -14,9 +14,10 @@ def read_mapping_stats(path: Path) -> tuple[int, int]:
     Raises:
         ValueError: total reads value is 0 in the file
         ValueError: aligned reads exceeds total reads.
+        ValueError: aligned reads below 10% of total reads
         FileNotFoundError: if the 'open' function fails
     """
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         headers = f.readline().strip().split("\t")
         values = f.readline().strip().split("\t")
     
@@ -41,6 +42,14 @@ def read_mapping_stats(path: Path) -> tuple[int, int]:
 
     if reads_aligned > reads_total:
         raise ValueError(f"Reads aligned ({reads_aligned}) exceeds total reads ({reads_total}) in {path}")
+
+    pct_of_reads_aligned = (reads_aligned / reads_total) * 100
+
+    if pct_of_reads_aligned < 10:
+        raise ValueError(
+            f"Reads aligned unusually low ({pct_of_reads_aligned:.1f}%): "
+            f"{reads_aligned} out of {reads_total} in {path}"
+        )
 
 
     return reads_total, reads_aligned
