@@ -50,6 +50,66 @@ SAMPLES = [
     },
 ]
 
+ABE_SAMPLES = [
+    {
+        "name": "abeF_1",
+        "guide_seq": "GCATGACTAGTCGTACGCTG",
+        "orientation": "F",
+        "intended_edit": 6,
+        "tolerated_edits": [3],
+        "outcomes": {
+            "unedited":                (0.20, []),
+            "corrected_only":          (0.20, [(5, "A", "G")]),
+            "corrected_w_tolerated":   (0.20, [(5, "A", "G"), (2, "A", "G")]),
+            "corrected_w_nontol_AtoG": (0.20, [(5, "A", "G"), (8, "A", "G")]),
+            "corrected_w_nonAtoG":     (0.20, [(5, "A", "G"), (17, "C", "T")]),
+        },
+    },
+    {
+        "name": "abeR_1",
+        "guide_seq": "GCATGACTAGTCGTACGCTG",
+        "orientation": "R",
+        "intended_edit": 6,
+        "tolerated_edits": [3],
+        "outcomes": {
+            "unedited":                (0.20, []),
+            "corrected_only":          (0.20, [(14, "T", "C")]),
+            "corrected_w_tolerated":   (0.20, [(14, "T", "C"), (17, "T", "C")]),
+            "corrected_w_nontol_AtoG": (0.20, [(14, "T", "C"), (11, "T", "C")]),
+            "corrected_w_nonAtoG":     (0.20, [(14, "T", "C"), (7, "C", "T")]),
+        },
+    },
+    {
+        "name": "abeF_2",
+        "guide_seq": "GCATGACATGCATGCAGCTG",
+        "orientation": "F",
+        "intended_edit": 6,
+        "tolerated_edits": [3, 8, 12],
+        "outcomes": {
+            "unedited":                (0.20, []),
+            "corrected_only":          (0.20, [(5, "A", "G")]),
+            "corrected_w_tolerated":   (0.20, [(5, "A", "G"), (2, "A", "G"), (7, "A", "G"), (11, "A", "G")]),
+            "corrected_w_nontol_AtoG": (0.20, [(5, "A", "G"), (15, "A", "G")]),
+            "corrected_w_nonAtoG":     (0.20, [(5, "A", "G"), (17, "C", "T")]),
+        },
+    },
+    {
+        "name": "abeR_2",
+        "guide_seq": "GCATGACATGCATGCAGCTG",
+        "orientation": "R",
+        "intended_edit": 6,
+        "tolerated_edits": [3, 8, 12],
+        "outcomes": {
+            "unedited":                (0.20, []),
+            "corrected_only":          (0.20, [(14, "T", "C")]),
+            "corrected_w_tolerated":   (0.20, [(14, "T", "C"), (17, "T", "C"), (12, "T", "C"), (8, "T", "C")]),
+            "corrected_w_nontol_AtoG": (0.20, [(14, "T", "C"), (4, "T", "C")]),
+            "corrected_w_nonAtoG":     (0.20, [(14, "T", "C"), (3, "C", "T")]),
+        },
+    },
+]
+
+
 COMP = {"A": "T", "T": "A", "C": "G", "G": "C"}
 
 def make_outcomes(guide_seq, orientation, intended_edit, tolerated_edits, het_pairs):
@@ -116,6 +176,26 @@ def main():
             "intended_edit":                        sample["intended_edit"],
         })
         print(f"Generated {sample['name']}: {N_READS} reads, {len(outcomes)} outcomes")
+
+    for s in ABE_SAMPLES:
+        proto = s["guide_seq"] if s["orientation"] == "F" else reverse_complement(s["guide_seq"])
+        amplicon = "A" * 60 + proto + "A" * (151 - 60 - len(proto))
+        fastq_dir = FASTQS_DIR / f"{s['name']}_1"
+        fastq_dir.mkdir(parents=True, exist_ok=True)
+
+        make_fastq_gz(fastq_dir / "reads_R1.fastq.gz", proto, N_READS, s["outcomes"])
+
+        amplicon_rows.append({
+            "name":                                 s["name"],
+            "protospacer_or_PEG":                   s["guide_seq"],
+            "editor":                               "ABE",
+            "guide_orientation_relative_to_amplicon": s["orientation"],
+            "amplicon":                             amplicon,
+            "note":                                 "",
+            "tolerated_edits":                      " ".join(str(t) for t in s["tolerated_edits"]),
+            "intended_edit":                        s["intended_edit"],
+        })
+        print(f"Generated {s['name']}: {N_READS} reads")
 
     with open("het_amplicon_list.csv", "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=[

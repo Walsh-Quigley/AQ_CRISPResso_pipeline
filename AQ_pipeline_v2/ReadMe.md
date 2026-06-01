@@ -227,12 +227,14 @@ In the case of a heterozygous sample, the output table will have additional colu
 | X | any_change_minus_any_AtoG_allele2 | Gain from allowing any protospacer change, allele 2 |
 | Y | het_position | Position of the detected heterozygous site (1-based) |
 | Z | het_alleles | The two bases at the heterozygous position, e.g. A/C |
+| AA | reads_aligned_allele1 | Reads aligned attributed to allele 1 (reads_aligned × allele 1 fraction) |
+| AB | reads_aligned_allele2 | Reads aligned attributed to allele 2 (reads_aligned × allele 2 fraction) |
 
 | Column | Header | Description |
 |--------|--------|-------------|
-| AA | target_locus | Protospacer sequence |
-| AB | perfect_correction | Ideal corrected sequence with only the intended edit |
-| AC | corrected_locus_with_bystanders | All corrected sequences searched, separated by semicolons |
+| AC | target_locus | Protospacer sequence |
+| AD | perfect_correction | Ideal corrected sequence with only the intended edit |
+| AE | corrected_locus_with_bystanders | All corrected sequences searched, separated by semicolons |
 
 ### ONESEQ_Quantification_Summary.csv
 For each sample, reports the percentage of reads containing A→G edits within the first 10 bp of the protospacer and anywhere across the full protospacer.
