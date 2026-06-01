@@ -1,0 +1,2 @@
+# List of Python pachages needed
+pandas>=2.3.3

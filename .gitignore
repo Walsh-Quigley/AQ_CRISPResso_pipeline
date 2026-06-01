@@ -1,13 +1,23 @@
-# Ignore everything
-*
+# macOS
+.DS_Store
 
-# Except these
-!.gitignore
-!CRISPResso_Loop.py
-!Quantification_loop.py
-!README.md
-!scripts/
-!scripts/**
-scripts/__pycache__/
-scripts/process_CBE_case.py
-!amplicon_list.csv
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Log files
+*.log
+logs/
+
+# FASTQ data
+**/fastqs/
+
+# Amplicon list (experiment-specific)
+*amplicon_list*.csv
+
+# Pipeline output files
+ABE_Quantification_Summary.csv
+ONESEQ_Quantification_Summary.csv
+Prism_Input*.csv
+failed_samples.csv

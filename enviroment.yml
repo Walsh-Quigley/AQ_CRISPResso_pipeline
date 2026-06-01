@@ -1,0 +1,12 @@
+# conda enviorment definition (including CRISPResso2 which must come from conda)
+name: AQ-pipeline
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.11
+  - crispresso2>=2.3.3
+  - pip
+  - pip:
+    - pandas>=2.3.3
