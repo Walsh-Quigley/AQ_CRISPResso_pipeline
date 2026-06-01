@@ -6,7 +6,7 @@ This pipeline enables the automation of CRISPResso analysis on fastq files with 
 ## Prerequisites
 This pipeline is created for Mac or Linux use. If working on a Windows machine, it is recommended that a user install a Linux distribution such as Ubuntu that can be used through WSL. The following installation guide will be written for implementation within a Conda environment. The list of software needed is listed here. A detailed installation guide will follow.
 - Conda/Miniconda
-- Python 3.13 or later
+- Python 3.11 or later
 - CRISPResso 2 
 - Pandas (Python Package)
 
@@ -17,7 +17,7 @@ Conda is a package and environment manager that is recommended for use if the us
 ### Step 2: Creating and activating a Conda Environment
 This step will be a guide to creating a Conda environment. Open the terminal on your machine. For Mac users this will be Terminal, for Windows users this will be Ubuntu. Next we will make a Conda environment that has Python installed using this command, the name of the environment can be chosen by the user:
   ```bash
-  conda create -n [Name Of Environment] python=3.13
+  conda create -n [Name Of Environment] python=3.11
   ```
 We can then activate the Conda environment to begin analysis:
   ```bash
