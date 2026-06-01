@@ -10,6 +10,42 @@ from loaders.exports import generate_prism_csv, generate_prism_csv_het
 
 SKIP_DIRS = {"__pycache__", ".git", ".DS_Store"}
 
+
+CANONICAL_ABE_COLUMNS = [
+    "sample",
+    "reads_total",
+    "reads_aligned",
+    "correction_without_bystanders",
+    "correction_with_tolerated_bystanders",
+    "correction_with_any_AtoG_change",
+    "correction_with_any_change_in_protospacer",
+    "w_bystanders_minus_wo_bystanders",
+    "any_AtoG_minus_w_bystanders",
+    "any_change_minus_any_AtoG",
+    "correction_wo_bystanders_allele1",
+    "correction_w_bystanders_allele1",
+    "correction_wo_bystanders_allele2",
+    "correction_w_bystanders_allele2",
+    "correction_with_any_AtoG_change_allele1",
+    "correction_with_any_change_in_protospacer_allele1",
+    "correction_with_any_AtoG_change_allele2",
+    "correction_with_any_change_in_protospacer_allele2",
+    "w_bystanders_minus_wo_bystanders_allele1",
+    "w_bystanders_minus_wo_bystanders_allele2",
+    "any_AtoG_minus_w_bystanders_allele1",
+    "any_AtoG_minus_w_bystanders_allele2",
+    "any_change_minus_any_AtoG_allele1",
+    "any_change_minus_any_AtoG_allele2",
+    "het_position",
+    "het_alleles",
+    "reads_aligned_allele1",
+    "reads_aligned_allele2",
+    "target_locus",
+    "perfect_correction",
+    "corrected_locus_with_bystanders",
+]
+
+
 log_dir = Path("logs")
 log_dir.mkdir(exist_ok=True)
 logging.basicConfig(
@@ -60,6 +96,11 @@ def main():
             if each == "ABE":
                 abe_df = pd.DataFrame(results_by_type["ABE"])
                 abe_df = abe_df.sort_values(by="sample")
+                known = [c for c in CANONICAL_ABE_COLUMNS if c in abe_df.columns]
+                unknown = [c for c in abe_df.columns if c not in CANONICAL_ABE_COLUMNS]
+                if unknown:
+                    logging.warning(f"Unexpected columns not in canonical order, appended at end: {unknown}")
+                abe_df = abe_df.reindex(columns=known + unknown)
                 abe_df.to_csv("ABE_Quantification_Summary.csv", index=False)
             elif each == "ONESEQ":
                 oneseq_df = pd.DataFrame(results_by_type["ONESEQ"])
