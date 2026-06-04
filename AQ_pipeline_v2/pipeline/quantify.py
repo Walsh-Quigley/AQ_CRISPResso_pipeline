@@ -4,12 +4,12 @@ import pandas as pd
 import re
 import logging
 from config import AmpliconConfig
-from loaders.crispresso_output import read_mapping_stats, read_allele_table, read_quant_window
+from loaders.crispresso_output import read_mapping_stats, read_allele_table, read_quant_window, read_editing_frequency
 from utils.sequences import generate_search_sequences, generate_oneseq_search_sequences, reverse_complement
 from analysis.abe import calculate_correction, calculate_protospacer_metrics
 from analysis.oneseq import calculate_oneseq
 from analysis.heterozygous import calculate_het_correction, calculate_het_protospacer_metrics, find_het_position
-
+from analysis.nuclease import calculate_frameshift
 
 # Stage 2 -> parses CRISPResso outputs, calls analysis modules,
 # assembles final result
@@ -200,6 +200,49 @@ def quantify_oneseq_sample(amplicon_row: AmpliconConfig,
         "search_sequences_any": ";".join(full_seqs)
     }
 
+def quantify_nuclease_sample(amplicon_row: AmpliconConfig,
+                             sample_name: str,
+                             allele_table_df: pd.DataFrame,
+                             reads_total: int,
+                             reads_aligned: int,
+                             editing_freq: dict) -> dict:
+    """creates a dictionary containing relevant analytics about a given nuclease sample
+    Args:
+        amplicon_row: the AmpliconConfig object for the specific sample
+        sample_name: the name of the sample analysis is being performed on
+        allele_table_df: the dataframe containing the information from the Allele Frequency Table from a sample
+        reads_total: the number of total reads in a fastq
+        reads_aligned: the number of reads that aligned in the fastq
+        editing_freq: the editing frequency data for the given CRISPResso sample
+    Returns:
+        dict: returns a dictionary of relevant information about the given nuclease sample"""
+    
+    frameshift_states = calculate_frameshift(allele_table_df)
+    
+    pct_frameshift_indels = frameshift_states["pct_frameshift_indels"]
+    pct_inframe_indels = frameshift_states["pct_inframe_indels"]
+
+    pct_modified = editing_freq["modified_pct"]
+    pct_unmodified = editing_freq["unmodified_pct"]
+    pct_deletion = round(editing_freq["deletions"] / reads_aligned * 100, 2)
+    pct_insertion = round(editing_freq["insertions"] / reads_aligned * 100, 2)
+    pct_substitution = round(editing_freq["substitutions"] / reads_aligned * 100, 2)
+    
+    return {
+        "sample": re.sub(r'(_L\d{3})?-ds\..*', '', sample_name),
+        "reads_total": reads_total,
+        "reads_aligned": reads_aligned,
+        "pct_modified": pct_modified,
+        "pct_unmodified": pct_unmodified,
+        "pct_deletions": pct_deletion,
+        "pct_insertions": pct_insertion,
+        "pct_substitutions": pct_substitution,
+        "pct_frameshift_indels": pct_frameshift_indels,
+        "pct_inframe_indels": pct_inframe_indels,
+        "target_locus": amplicon_row.protospacer
+    }
+
+
 def quantify_sample(amplicon_row: AmpliconConfig, crispresso_dir: Path) -> dict:
     """the guiding path for the sample quantification, determined by what kind of editor
     Args:
@@ -238,6 +281,9 @@ def quantify_sample(amplicon_row: AmpliconConfig, crispresso_dir: Path) -> dict:
             results_dict = quantify_het_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned, het_pos, base1, base2)
         else:
             results_dict = quantify_abe_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned)
+    elif amplicon_row.editor == "NUCLEASE":
+        editing_dict = read_editing_frequency(crispresso_subfolder / "CRISPResso_quantification_of_editing_frequency.txt")
+        results_dict = quantify_nuclease_sample(amplicon_row, crispresso_dir.name, allele_table_df, reads_total, reads_aligned, editing_dict)
     else:
         raise ValueError(f"Unknown editor type: {amplicon_row.editor}")
 

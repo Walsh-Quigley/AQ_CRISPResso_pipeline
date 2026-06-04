@@ -1,6 +1,6 @@
 import subprocess
 from pathlib import Path
-from tests.helper import make_fastq_gz
+from tests.helper import make_fastq_gz, make_nuclease_fastq_gz
 from utils.sequences import reverse_complement
 import os
 import pandas as pd
@@ -103,7 +103,6 @@ def test_ABE(tmp_path):
     # spot-check the value pipeline (correction_without_bystanders_rep1 == 20.0 from the asserts above)
     pah1_row = prism_df[prism_df["base_sample"] == "Sample_PAH1"].iloc[0]
     assert pah1_row["correction_without_bystanders_rep1"] == 20.0
-
 
 def test_het_ABE(tmp_path):
     fastq_dir_f = tmp_path / "fastqs" / "Sample_PAH1_1"
@@ -218,7 +217,6 @@ def test_het_ABE(tmp_path):
     assert r186w_a1["reads_aligned_rep1"] == 1000
     assert r186w_a2["reads_aligned_rep1"] == 1000
 
-
 def test_ONESEQ(tmp_path):
     fastq_dir_f= tmp_path / "fastqs" / "Sample_forward_ONESEQ_1"
     fastq_dir_f.mkdir(parents=True)
@@ -281,6 +279,59 @@ def test_ONESEQ(tmp_path):
         assert row["pct_AtoG_first_10bp"] == 40.0
         assert row["pct_AtoG_anywhere"] == 60.0
 
+def test_NUCLEASE(tmp_path):
+    fastq_dir = tmp_path / "fastqs" / "Sample_KO1_1"
+    fastq_dir.mkdir(parents=True)
+
+    KO1_proto = "GCATGACTAGTCGTACGCTG"
+    KO1_amplicon_seq = "A" * 60 + KO1_proto + "A" * 71
+
+    with open(tmp_path / "amplicon_list.csv", "w") as f:
+        f.write("name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit\n")
+        f.write(f"KO1,{KO1_proto},NUCLEASE,F,{KO1_amplicon_seq},,,\n")
+
+    make_nuclease_fastq_gz(
+        fastq_dir / "reads_R1.fastq.gz",
+        protospacer=KO1_proto,
+        n_reads=1000,
+        outcomes={
+            "unmodified": (0.40, []),
+            "del1":       (0.20, [("del", 17, 1)]),
+            "del3":       (0.20, [("del", 16, 3)]),
+            "ins2":       (0.20, [("ins", 17, "TT")]),
+        },
+    )
+
+    subprocess.run(
+        ["python", str(Path(__file__).parent.parent / "CRISPResso_Loop.py")],
+        cwd=tmp_path,
+        env=env,
+        check=True,
+    )
+    subprocess.run(
+        ["python", str(Path(__file__).parent.parent / "Quantification_Loop.py")],
+        cwd=tmp_path,
+        env=env,
+        input="n\n",
+        text=True,
+        check=True,
+    )
+
+    shutil.copy(
+        tmp_path / "NUCLEASE_Quantification_Summary.csv",
+        Path("tests/test_output") / "NUCLEASE_Quantification_Summary_test_NUCLEASE.csv",
+    )
+
+    df = pd.read_csv(tmp_path / "NUCLEASE_Quantification_Summary.csv")
+    ko1 = df[df["sample"] == "Sample_KO1_1"].iloc[0]
+
+    assert ko1["pct_unmodified"] == 40.0
+    assert ko1["pct_modified"] == 60.0
+    assert ko1["pct_deletions"] == 40.0
+    assert ko1["pct_insertions"] == 20.0
+    assert ko1["pct_frameshift_indels"] == 40.0
+    assert ko1["pct_inframe_indels"] == 20.0
+
 def test_failed_samples_csv_generated(tmp_path):
     # Create fastqs dir with a sample whose name won't match any amplicon
     fastq_dir = tmp_path / "fastqs" / "UnmatchableName_1"
@@ -314,4 +365,3 @@ def test_failed_samples_csv_generated(tmp_path):
     assert df["error_type"].iloc[0] == "ValueError"
     assert "amplicon" in df["error_message"].iloc[0].lower()
     assert not (tmp_path / "ABE_Quantification_Summary.csv").exists()
-

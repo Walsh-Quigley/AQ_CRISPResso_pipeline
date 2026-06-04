@@ -29,6 +29,27 @@ def pair_fastq_files(fastq_files: list[str]) -> tuple[str, str]:
         raise ValueError(f"could not unambiguously identify R1/R2 in {fastq_files}")
     return read1, read2
 
+def build_window_args(amplicon_list_row: AmpliconConfig) -> list[str]:
+    """checks editor and creates the correct window arguments for the CRISPResso command, 
+        based on the editor.
+    Args:
+        amplicon_list_row: the AmpliconConfig object used for this CRISPResso call
+    Returns:
+        list[str]: a list of arguments to be passed to the CRISPResso call
+    """
+    proto_len = len(amplicon_list_row.protospacer)
+    if amplicon_list_row.editor == "NUCLEASE":
+        return [
+            '--quantification_window_center', '-3',
+            '--quantification_window_size', '15',
+            '--plot_window_size', '15',
+            '--default_min_aln_score', str(amplicon_list_row.min_alignment_score),
+        ]
+    return [
+            '--plot_window_size', str((proto_len + 1) // 2),
+            '--quantification_window_center', str(-proto_len // 2),
+            '--quantification_window_size', str((proto_len + 1) // 2),
+        ]
 
 def identify_amplicon(directory_name: str, amplicon_configs: list[AmpliconConfig]) -> AmpliconConfig:
     """matches the correct amplicon to the given sample
@@ -85,16 +106,18 @@ def run_crispresso(amplicon_list_row: AmpliconConfig, sample_dir: Path) -> None:
     else:
         raise ValueError(f"More than two FASTQ files found in {sample_dir}")
 
-    cmd = [
+    ####Static Args the crispresso command need regardless of editor
+    common_args = [
         'CRISPResso',
         *fastq_cmd_section,
         '--amplicon_seq', amplicon_list_row.amplicon, #amplicon sequence from amplicon config object
         '--guide_seq', amplicon_list_row.protospacer, #protospacer sequence from amplicon config object
         '--output_folder', str(sample_dir), #output folder for the crispresso run
-        '--plot_window_size', str((len(amplicon_list_row.protospacer) + 1) // 2), # radius of the plot window (what shows in the allele table), set to half the protospacer length
-        '--quantification_window_center', str(-len(amplicon_list_row.protospacer) // 2), # center of the quantification window, relative to the cut site — set to land in the middle of the protospacer
-        '--quantification_window_size', str((len(amplicon_list_row.protospacer)+1) // 2), #radius of the quantification windo, set to be half the size of the protospacer
-    ]    
+    ]
 
+    #helper funtion that populates the remaining window args based on editor
+    window_args = build_window_args(amplicon_list_row)
+
+    cmd = common_args + window_args
     subprocess.run(cmd, check=True)
 

@@ -79,3 +79,37 @@ def read_quant_window(path: Path) -> pd.DataFrame:
     df = df.astype(float)
     return df
 
+def read_editing_frequency(path: Path) -> dict:
+    """Reads the CRISPResso_quantification_of_editing_frequency file and returns the
+    modification breakdown for the (single) reference amplicon.
+    Args:
+        path: Path to the CRISPResso_quantification_of_editing_frequency.txt file
+    Returns:
+        dict: modified/unmodified percentages and insertion/deletion/substitution read counts
+    Raises:
+        FileNotFoundError: if the file does not exist
+        ValueError: if the file does not contain exactly one data row
+    """
+    with open(path, encoding="utf-8") as f:
+        lines = []
+        for line in f:
+            stripped = line.strip()
+            if stripped:
+                lines.append(stripped)
+
+    if len(lines[1:]) != 1:
+        raise ValueError(
+            f"Expected an editing frequency table with 1 data row, found {len(lines[1:])} in {path}"
+        )
+
+    headers = lines[0].split("\t")
+    values = lines[1].split("\t")
+    row = dict(zip(headers, values))
+
+    return {
+        "modified_pct": float(row["Modified%"]),
+        "unmodified_pct": float(row["Unmodified%"]),
+        "insertions": int(row["Insertions"]),
+        "deletions": int(row["Deletions"]),
+        "substitutions": int(row["Substitutions"]),
+    }

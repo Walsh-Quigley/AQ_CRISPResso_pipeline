@@ -1,7 +1,7 @@
 import pytest
 from loaders.amplicon_list import load_amplicon_list, find_amplicon_list
 from config import AmpliconConfig
-from loaders.crispresso_output import read_allele_table, read_mapping_stats
+from loaders.crispresso_output import read_allele_table, read_mapping_stats, read_editing_frequency
 
 
 """Tests for loaders/amplicon_list.py - covers CSV parsing, tolerated edit formats,
@@ -188,6 +188,42 @@ def test_read_mapping_stats_exactly_10pct_alignment_OK(tmp_path):
     result = read_mapping_stats(stats_file)
     assert result == (1000, 100)
 
+def test_read_editing_frequency(tmp_path):
+    editing_file = tmp_path / "CRISPResso_editing_frequency.txt"
+    editing_file.write_text(
+        "Unmodified%\tModified%\tReads_aligned\tInsertions\tDeletions\tSubstitutions\n"
+        "30.0\t70.0\t1000\t100\t600\t50\n"
+    )
+    result = read_editing_frequency(editing_file)
+    assert result["modified_pct"] == 70.0
+    assert result["unmodified_pct"] == 30.0
+    assert result["insertions"] == 100
+    assert result["deletions"] == 600
+    assert result["substitutions"] == 50 
+
+def test_read_editing_frequency_file_not_found_FORCED_FAIL(tmp_path):
+    editing_file = tmp_path / "nonexistent.txt"
+    with pytest.raises(FileNotFoundError):
+        read_editing_frequency(editing_file)
+
+def test_read_editing_frequency_multiple_rows_FORCED_FAIL(tmp_path):
+    editing_file = tmp_path / "CRISPResso_editing_frequency.txt"
+    editing_file.write_text(
+        "Unmodified%\tModified%\tReads_aligned\tInsertions\tDeletions\tSubstitutions\n"
+        "30.0\t70.0\t1000\t100\t600\t50\n"
+        "20.0\t40.0\t2000\t100\t600\t50\n"
+    )
+    with pytest.raises(ValueError):
+        result = read_editing_frequency(editing_file)
+
+def test_read_editing_frequency_no_data_rows_FORCED_FAIL(tmp_path):
+    editing_file = tmp_path / "CRISPResso_editing_frequency.txt"
+    editing_file.write_text(
+        "Unmodified%\tModified%\tReads_aligned\tInsertions\tDeletions\tSubstitutions\n"
+    )
+    with pytest.raises(ValueError):
+        result = read_editing_frequency(editing_file)
+
 def test_read_allele_table(tmp_path):
     allele_file = tmp_path / "Alleles_frequency_table_around.txt"
     allele_file.write_text(
@@ -230,3 +266,74 @@ def test_find_amplicon_list_multiple_files_FORCED_FAIL(tmp_path):
     amplicon_list_path.touch()
     with pytest.raises(ValueError):
         find_amplicon_list(tmp_path)
+
+def test_load_nuclease_row(tmp_path):
+    csv_file = tmp_path / "amplicon_list.csv"
+    csv_file.write_text(
+        "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit,min_alignment_score\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,NUCLEASE,R,AAAAAGGCCCAGCAGAAATGCAGCGTTTTT,min humanize,,,\n"
+    )
+    result = load_amplicon_list(csv_file)
+    assert result[0].name == "R186W"
+    assert result[0].protospacer == "CGCTGCATTTCTGCTGGGCC"
+    assert result[0].editor == "NUCLEASE"
+    assert result[0].orientation == "R"
+    assert result[0].intended_edit == None
+    assert result[0].min_alignment_score == 60
+    assert len(result) == 1
+
+def test_load_nuclease_custom_min_alignment_score(tmp_path):
+    csv_file = tmp_path / "amplicon_list.csv"
+    csv_file.write_text(
+        "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit,min_alignment_score\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,NUCLEASE,R,AAAAAGGCCCAGCAGAAATGCAGCGTTTTT,min humanize,,,75\n"
+    )
+    result = load_amplicon_list(csv_file)
+    assert result[0].name == "R186W"
+    assert result[0].protospacer == "CGCTGCATTTCTGCTGGGCC"
+    assert result[0].editor == "NUCLEASE"
+    assert result[0].orientation == "R"
+    assert result[0].min_alignment_score == 75
+    assert len(result) == 1
+
+def test_min_alignment_score_out_of_range_FORCED_FAIL(tmp_path):
+    csv_file = tmp_path / "amplicon_list.csv"
+    csv_file.write_text(
+        "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit,min_alignment_score\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,NUCLEASE,R,AAAAAGGCCCAGCAGAAATGCAGCGTTTTT,min humanize,,,101\n"
+    )
+    with pytest.raises(ValueError):
+        result = load_amplicon_list(csv_file)
+
+def test_load_nuclease_ignores_intended_edit(tmp_path):
+    csv_file = tmp_path / "amplicon_list.csv"
+    csv_file.write_text(
+        "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit,min_alignment_score\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,NUCLEASE,R,AAAAAGGCCCAGCAGAAATGCAGCGTTTTT,min humanize,5,5,75\n"
+    )
+    result = load_amplicon_list(csv_file)
+    assert result[0].name == "R186W"
+    assert result[0].protospacer == "CGCTGCATTTCTGCTGGGCC"
+    assert result[0].editor == "NUCLEASE"
+    assert result[0].orientation == "R"
+    assert result[0].tolerated_edits == []
+    assert result[0].intended_edit == None
+    assert result[0].min_alignment_score == 75
+    assert len(result) == 1
+
+def test_load_abe_row_min_score_defaults(tmp_path):
+    csv_file = tmp_path / "amplicon_list.csv"
+    csv_file.write_text(
+        "name,protospacer_or_PEG,editor,guide_orientation_relative_to_amplicon,amplicon,note,tolerated_edits,intended_edit,min_alignment_score\n"
+        "R186W,CGCTGCATTTCTGCTGGGCC,ABE,R,AAAAAGGCCCAGCAGAAATGCAGCGTTTTT,min humanize,5,5,60\n"
+    )
+    result = load_amplicon_list(csv_file)
+    assert result[0].name == "R186W"
+    assert result[0].protospacer == "CGCTGCATTTCTGCTGGGCC"
+    assert result[0].editor == "ABE"
+    assert result[0].orientation == "R"
+    assert result[0].tolerated_edits == [5]
+    assert result[0].intended_edit == 5
+    assert result[0].min_alignment_score == 60
+    assert len(result) == 1
+

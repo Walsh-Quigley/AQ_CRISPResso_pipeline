@@ -59,22 +59,33 @@ def load_amplicon_list(path: Path) -> list[AmpliconConfig]:
             if len(amplicon) < len(protospacer):
                 logging.warning(f"Amplicon for '{name}' is shorter than its protospacer — check your amplicon_list.")
 
-            intended_edit_raw = row["intended_edit"].strip().upper().replace("-", "")
-            if intended_edit_raw == "ONESEQ":
-                intended_edit = "ONESEQ"
-            elif intended_edit_raw.isdigit():
-                intended_edit = int(intended_edit_raw)
+            msa_raw = row.get("min_alignment_score", "").strip()
+            if msa_raw:
+                if not msa_raw.isdigit() or not (0 <= int(msa_raw) <= 100):
+                    raise ValueError(f"min_alignment_score for '{name}' must be an integer 0–100, got '{msa_raw}'")
+                min_alignment_score = int(msa_raw)
             else:
-                raise ValueError(f"Invalid intended_edit value '{row['intended_edit']}' for amplicon '{name}'")
-            if editor == "ONESEQ" and intended_edit != "ONESEQ":
-                raise ValueError(f"Amplicon '{name}' has editor=ONESEQ but intended_edit is '{intended_edit}' — set intended_edit to ONE-SEQ.")
-
-
-            tolerated_edits_raw = row.get("tolerated_edits", "").strip()
-            if tolerated_edits_raw:
-                tolerated_edits = [int(x) for x in tolerated_edits_raw.replace(",", " ").split()]
-            else:
+                min_alignment_score = 60
+            if editor == "NUCLEASE":
+                intended_edit = None
                 tolerated_edits = []
+            else:
+                intended_edit_raw = row["intended_edit"].strip().upper().replace("-", "")
+                if intended_edit_raw == "ONESEQ":
+                    intended_edit = "ONESEQ"
+                elif intended_edit_raw.isdigit():
+                    intended_edit = int(intended_edit_raw)
+                else:
+                    raise ValueError(f"Invalid intended_edit value '{row['intended_edit']}' for amplicon '{name}'")
+                if editor == "ONESEQ" and intended_edit != "ONESEQ":
+                    raise ValueError(f"Amplicon '{name}' has editor=ONESEQ but intended_edit is '{intended_edit}' — set intended_edit to ONE-SEQ.")
+
+
+                tolerated_edits_raw = row.get("tolerated_edits", "").strip()
+                if tolerated_edits_raw:
+                    tolerated_edits = [int(x) for x in tolerated_edits_raw.replace(",", " ").split()]
+                else:
+                    tolerated_edits = []
 
 
             configs.append(AmpliconConfig(
@@ -85,8 +96,10 @@ def load_amplicon_list(path: Path) -> list[AmpliconConfig]:
                 amplicon=amplicon,
                 intended_edit=intended_edit,
                 tolerated_edits=tolerated_edits,
+                min_alignment_score=min_alignment_score,   # <- add
                 note=note,
             ))
+
     return configs
 
 def find_amplicon_list(search_dir: Path = Path(".")) -> Path:

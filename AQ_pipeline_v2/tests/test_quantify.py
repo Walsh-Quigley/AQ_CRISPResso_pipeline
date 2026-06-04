@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from pipeline.quantify import quantify_sample
+from pipeline.quantify import quantify_sample, quantify_nuclease_sample
 from config import AmpliconConfig
 from unittest.mock import patch
 import pandas as pd
@@ -124,7 +124,6 @@ def test_dispatch_routes_ONESEQ_to_oneseq_sample(tmp_path):
     mock_het.assert_not_called()
     assert result == {"branch": "oneseq"}
 
-
 def test_dispatch_routes_ABE_non_het_to_abe_sample(tmp_path):
     sample_dir = make_dummy_crispresso_output(tmp_path)
     config = AmpliconConfig(
@@ -146,7 +145,6 @@ def test_dispatch_routes_ABE_non_het_to_abe_sample(tmp_path):
     mock_oneseq.assert_not_called()
     mock_het.assert_not_called()
     assert result == {"branch": "abe"}
-
 
 def test_dispatch_routes_ABE_het_to_het_sample(tmp_path):
     sample_dir = make_dummy_crispresso_output(tmp_path)
@@ -170,7 +168,6 @@ def test_dispatch_routes_ABE_het_to_het_sample(tmp_path):
     mock_abe.assert_not_called()
     assert result == {"branch": "het"}
 
-
 def test_dispatch_unknown_editor_FORCED_FAIL(tmp_path):
     sample_dir = make_dummy_crispresso_output(tmp_path)
     config = AmpliconConfig(
@@ -188,3 +185,43 @@ def test_dispatch_unknown_editor_FORCED_FAIL(tmp_path):
          patch("pipeline.quantify.quantify_het_sample"):
         with pytest.raises(ValueError):
             quantify_sample(config, sample_dir)
+
+def test_quantify_nuclease_sample():
+    allele_table_df = pd.DataFrame({
+        "n_inserted": [0, 0, 0, 1],
+        "n_deleted":  [0, 1, 3, 0],
+        "%Reads":     [40.0, 20.0, 20.0, 20.0],
+    })
+    editing_freq = {
+        "modified_pct": 70.0,
+        "unmodified_pct": 30.0,
+        "insertions": 100,
+        "deletions": 600,
+        "substitutions": 50,
+    }
+    amplicon_row = AmpliconConfig(
+        name="KO1",
+        protospacer="GCATGACTAGTCGTACGCTG",
+        editor="NUCLEASE",
+        orientation="F",
+        amplicon="A" * 60 + "GCATGACTAGTCGTACGCTG" + "A" * 71,
+        intended_edit=None,
+        tolerated_edits=[],
+    )
+
+    result = quantify_nuclease_sample(
+        amplicon_row, "Sample_KO1_1", allele_table_df,
+        reads_total=2000, reads_aligned=1000, editing_freq=editing_freq,
+    )
+
+    assert result["sample"] == "Sample_KO1_1"
+    assert result["reads_total"] == 2000
+    assert result["reads_aligned"] == 1000
+    assert result["pct_modified"] == 70.0
+    assert result["pct_unmodified"] == 30.0
+    assert result["pct_deletions"] == 60.0          # 600/1000*100  (would be 100.6 with the old +100 bug)
+    assert result["pct_insertions"] == 10.0         # 100/1000*100
+    assert result["pct_substitutions"] == 5.0       # 50/1000*100
+    assert result["pct_frameshift_indels"] == 40.0  # 20 (1bp del) + 20 (1bp ins)
+    assert result["pct_inframe_indels"] == 20.0     # 3bp del
+    assert result["target_locus"] == "GCATGACTAGTCGTACGCTG"

@@ -63,7 +63,7 @@ def main():
     failed_samples = []
     error_count = 0
     completed_count = 0
-    results_by_type = {"ABE": [], "ONESEQ": []}
+    results_by_type = {"ABE": [], "ONESEQ": [], "NUCLEASE": []}
     fastqs_dir = Path("fastqs")
     amplicon_configs = load_amplicon_list(find_amplicon_list())
     for sample_dir in fastqs_dir.iterdir():
@@ -77,6 +77,8 @@ def main():
             result = quantify_sample(config, sample_dir)
             if config.intended_edit == "ONESEQ":
                 results_by_type["ONESEQ"].append(result)
+            elif config.editor == "NUCLEASE":
+                results_by_type["NUCLEASE"].append(result)
             else:
                 results_by_type["ABE"].append(result)
             logging.info(f"Done: {sample_dir.name}")
@@ -106,6 +108,10 @@ def main():
                 oneseq_df = pd.DataFrame(results_by_type["ONESEQ"])
                 oneseq_df = oneseq_df.sort_values(by="sample")
                 oneseq_df.to_csv("ONESEQ_Quantification_Summary.csv", index=False)
+            elif each == "NUCLEASE":
+                nuclease_df = pd.DataFrame(results_by_type["NUCLEASE"])
+                nuclease_df = nuclease_df.sort_values(by="sample")
+                nuclease_df.to_csv("NUCLEASE_Quantification_Summary.csv", index=False)
             else:
                 raise ValueError(f"Unknown editor type")
     if results_by_type["ABE"]:

@@ -1,5 +1,5 @@
 import pytest
-from pipeline.crispresso import identify_amplicon, pair_fastq_files
+from pipeline.crispresso import identify_amplicon, pair_fastq_files, build_window_args
 from config import AmpliconConfig
 
 
@@ -70,7 +70,6 @@ def test_pair_reversed_order():
     assert read1 == "Sample_R1.fastq.gz"
     assert read2 == "Sample_R2.fastq.gz"
 
-
 def test_pair_case_insensitive():
     read1, read2 = pair_fastq_files(["Sample_r1.fastq.gz", "Sample_r2.fastq.gz"])
     assert read1 == "Sample_r1.fastq.gz"
@@ -88,4 +87,32 @@ def test_pair_no_markers_FORCED_FAIL():
     with pytest.raises(ValueError):
         pair_fastq_files(["Sample_a.fastq.gz", "Sample_b.fastq.gz"])
 
-    
+def test_window_args_nuclease():
+    cfg = AmpliconConfig(name="x", protospacer="A"*20, editor="NUCLEASE",
+                        orientation="F", amplicon="A"*40,
+                        intended_edit=None, tolerated_edits=[], min_alignment_score=75)
+    assert build_window_args(cfg) == [
+        '--quantification_window_center', '-3',
+        '--quantification_window_size', '15',
+        '--plot_window_size', '15',
+        '--default_min_aln_score', '75',
+    ]
+
+def test_window_args_abe():
+    cfg = AmpliconConfig(name="x", protospacer="A"*20, editor="ABE",
+                     orientation="F", amplicon="A"*40,
+                     intended_edit=5, tolerated_edits=[])   # min_alignment_score defaults 60
+    assert build_window_args(cfg) == [
+        '--plot_window_size', '10',
+        '--quantification_window_center', '-10',
+        '--quantification_window_size', '10',
+    ]
+
+def test_window_args_oneqseq():
+    cfg = AmpliconConfig(name="x", protospacer="A"*20, editor="ONESEQ",
+                     orientation="F", amplicon="A"*40,
+                     intended_edit="ONESEQ", tolerated_edits=[])
+    assert build_window_args(cfg) == [
+        '--plot_window_size', '10', '--quantification_window_center', '-10',
+        '--quantification_window_size', '10',
+    ]

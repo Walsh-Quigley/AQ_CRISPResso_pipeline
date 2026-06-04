@@ -129,3 +129,49 @@ def make_dummy_crispresso_output(tmp_path: Path):
     (crispresso_sub / "Alleles_frequency_table_around_sgRNA_X.txt").write_text("dummy")
     (crispresso_sub / "CRISPResso_mapping_statistics.txt").write_text("dummy")
     return sample_dir
+
+def make_nuclease_fastq_gz(path: Path, 
+                            protospacer: str, 
+                            n_reads: int, 
+                            outcomes: dict[str, tuple[float, list[tuple[str, int, int | str]]]]) -> None:
+    """helper function for tests, makes a gzipped fastq file of reads carrying indels.
+    Every read is 60 As + the protospacer (with its indel ops applied) + As padding
+    toward the 151bp Illumina read length; deletions shorten the read and insertions
+    lengthen it.
+    Args:
+        path: location for the fastq file to reside
+        protospacer: the protospacer used to create the fastq entries
+        n_reads: number of total reads in the fastq file
+        outcomes: dict mapping outcome_name → (fraction, ops) where
+            fraction is a float (portion of n_reads),
+            ops is a list of indel operations, each one of:
+                ("del", pos, size) — delete `size` bases at protospacer-relative pos
+                ("ins", pos, seq)  — insert string `seq` at protospacer-relative pos
+            pos is 0-indexed within the protospacer; an empty list produces an
+            unmodified read. Multiple ops are applied right-to-left so earlier
+            positions are not shifted by later edits.
+    Returns:
+        None
+    """
+    protospacer_offset = 60
+    right_pad = 151 - protospacer_offset - len(protospacer) #151 is the illumina read length
+
+    amplicon = ("A" * protospacer_offset + protospacer + "A" * right_pad)
+    read_counter = 0
+    with gzip.open(path, "wt") as f:
+        for outcome_name, (fraction, edits) in outcomes.items():
+            edited = amplicon
+            for (kind, pos, payload) in sorted(edits, key=lambda o: o[1], reverse=True):
+                idx = protospacer_offset + pos
+                if kind == "del":
+                    edited = edited[:idx] + edited[idx + payload:]
+                elif kind == "ins":
+                    edited = edited[:idx] + payload + edited[idx:]
+                else:
+                    raise ValueError(f"Unknown op kind '{kind}'")
+            for i in range(round(n_reads * fraction)):
+                f.write(f"@read_{read_counter}\n")
+                f.write(f"{edited}\n")
+                f.write("+\n")
+                f.write(f"{'I' * len(edited)}\n")
+                read_counter += 1
