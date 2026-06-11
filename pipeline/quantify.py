@@ -212,7 +212,7 @@ def quantify_sample(amplicon_row: AmpliconConfig, crispresso_dir: Path) -> dict:
         ValueError: multiple allele tables found in the CRISPResso subfolder
         ValueError: unknown editor type"""
     
-    matches = glob(str(crispresso_dir / "CRISPResso_on_*"))
+    matches = [m for m in glob(str(crispresso_dir / "CRISPResso_on_*")) if Path(m).is_dir()]
     if not matches:
         raise FileNotFoundError(f"No CRISPResso output folder found in {crispresso_dir}")
     crispresso_subfolder = Path(matches[0])
